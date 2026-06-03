@@ -88,6 +88,15 @@
   .cinema-mode #controls { opacity: 0; pointer-events: none; }
   .cinema-mode #participants { opacity: 0; pointer-events: none; }
   .cinema-mode #localVideo { opacity: 0; pointer-events: none; }
+  :fullscreen #remoteVideo {
+    width: 100vw !important;
+    height: 100vh !important;
+    object-fit: contain !important;
+  }
+  :fullscreen #controls { display: none !important; }
+  :fullscreen #participants { display: none !important; }
+  :fullscreen #localVideo { display: none !important; }
+  :fullscreen #cinemaToggle { display: none !important; }
   .ctrl-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
   .ctrl-btn button {
     width: 58px; height: 58px; border-radius: 50%; border: none; font-size: 22px;
@@ -533,8 +542,46 @@ function toggleCinema() {
   $('btnCinema').classList.toggle('on', cinemaMode);
   $('cinemaToggle').style.display = cinemaMode ? 'flex' : 'none';
   $('cinemaToggle').classList.toggle('on', cinemaMode);
+
+  // Настоящий полноэкранный режим через Fullscreen API
+  if (cinemaMode) {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch(e => console.log('Fullscreen error:', e));
+    } else if (elem.webkitRequestFullscreen) {
+      elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+      elem.msRequestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(e => {});
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    }
+  }
   console.log('Cinema mode:', cinemaMode);
 }
+
+// Слушаем ESC / жест назад — выходим из кино-режима
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && cinemaMode) {
+    cinemaMode = false;
+    document.body.classList.remove('cinema-mode');
+    $('btnCinema').classList.remove('on');
+    $('cinemaToggle').style.display = 'none';
+  }
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  if (!document.webkitFullscreenElement && cinemaMode) {
+    cinemaMode = false;
+    document.body.classList.remove('cinema-mode');
+    $('btnCinema').classList.remove('on');
+    $('cinemaToggle').style.display = 'none';
+  }
+});
 
 function updateButtons() {
   const camOn = !!cameraStream;
