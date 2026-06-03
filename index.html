@@ -66,7 +66,28 @@
     display: none; gap: 20px; z-index: 20; background: rgba(0,0,0,0.35);
     padding: 14px 24px; border-radius: 24px; backdrop-filter: blur(12px);
     border: 1px solid rgba(255,255,255,0.08);
+    transition: opacity 0.3s, transform 0.3s;
   }
+  #controls.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(20px);
+  }
+  #cinemaToggle {
+    position: fixed; bottom: 28px; right: 28px; z-index: 25;
+    width: 50px; height: 50px; border-radius: 50%; border: none;
+    background: rgba(0,0,0,0.5); color: #fff; font-size: 20px;
+    cursor: pointer; backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.12);
+    display: none; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  #cinemaToggle:hover { background: rgba(0,0,0,0.7); transform: scale(1.1); }
+  #cinemaToggle.on { background: #0af; }
+  .cinema-mode #remoteVideo { object-fit: contain; background: #000; }
+  .cinema-mode #controls { opacity: 0; pointer-events: none; }
+  .cinema-mode #participants { opacity: 0; pointer-events: none; }
+  .cinema-mode #localVideo { opacity: 0; pointer-events: none; }
   .ctrl-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
   .ctrl-btn button {
     width: 58px; height: 58px; border-radius: 50%; border: none; font-size: 22px;
@@ -83,9 +104,11 @@
   @media (max-width: 640px) {
     .card { width: 92%; padding: 32px 20px; }
     #localVideo { width: 130px; height: 98px; bottom: 110px; right: 12px; }
-    #controls { gap: 14px; padding: 12px 18px; }
-    .ctrl-btn button { width: 54px; height: 54px; font-size: 20px; }
+    #controls { gap: 14px; padding: 12px 18px; bottom: 20px; }
+    .ctrl-btn button { width: 48px; height: 48px; font-size: 18px; }
+    .ctrl-btn span { font-size: 9px; }
     #participants { top: 12px; right: 12px; max-width: 160px; padding: 10px 12px; }
+    #cinemaToggle { width: 44px; height: 44px; font-size: 18px; bottom: 20px; right: 16px; }
   }
 </style>
 </head>
@@ -124,11 +147,17 @@
     <button id="btnScreen">🖥️</button>
     <span>Экран</span>
   </div>
+  <div class="ctrl-btn" onclick="toggleCinema()">
+    <button id="btnCinema">🎬</button>
+    <span>Кино</span>
+  </div>
   <div class="ctrl-btn" onclick="hangup()">
     <button id="btnHangup">📞</button>
     <span>Выйти</span>
   </div>
 </div>
+
+<button id="cinemaToggle" onclick="toggleCinema()">🎬</button>
 
 <script>
 const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
@@ -494,6 +523,17 @@ function getInitials(name) {
 }
 function escapeHtml(t) {
   return t.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
+}
+
+let cinemaMode = false;
+
+function toggleCinema() {
+  cinemaMode = !cinemaMode;
+  document.body.classList.toggle('cinema-mode', cinemaMode);
+  $('btnCinema').classList.toggle('on', cinemaMode);
+  $('cinemaToggle').style.display = cinemaMode ? 'flex' : 'none';
+  $('cinemaToggle').classList.toggle('on', cinemaMode);
+  console.log('Cinema mode:', cinemaMode);
 }
 
 function updateButtons() {
