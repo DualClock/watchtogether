@@ -190,10 +190,16 @@ const $ = id => document.getElementById(id);
 
 const config = {
   iceServers: [
+    // Google STUN - может быть заблокирован в России, но оставлен как резервный
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
+    // Cloudflare STUN - обычно работает в России
+    { urls: 'stun:stun.cloudflare.com:3478' },
+    // Twilio STUN - часто работает
+    { urls: 'stun:stun.twilio.com:3478' },
+    // Xirsys TURN - бесплатный, может работать
+    { urls: 'turn:global.turn.twilio.com:3478?transport=udp', username: '', credential: '' },
+    { urls: 'turn:global.turn.twilio.com:3478?transport=tcp', username: '', credential: '' }
   ]
 };
 
