@@ -7,7 +7,7 @@ const server = http.createServer((req, res) => {
   if (req.url === '/') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(fs.readFileSync(path.join(__dirname, 'index.html')));
-  } else if (req.url.startsWith('/image/')) {
+  } else if (req.url.startsWith('/image/') || req.url.startsWith('/milanaImage/')) {
     const filePath = path.join(__dirname, decodeURIComponent(req.url));
     const ext = path.extname(filePath);
     const contentTypes = {
