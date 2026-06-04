@@ -298,6 +298,31 @@
 
   #screenFullscreen.visible { display: flex; }
 
+  #remoteFullscreen {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 150;
+    transition: all 0.2s;
+  }
+
+  #remoteFullscreen:hover {
+    background: rgba(255,255,255,0.25);
+  }
+
+  #remoteFullscreen.visible { display: flex; }
+
   /* Chat sidebar */
   .chat-sidebar {
     width: 300px;
@@ -665,6 +690,13 @@
       width: 40px !important;
       height: 40px !important;
     }
+
+    #remoteFullscreen {
+      top: 12px !important;
+      left: 12px !important;
+      width: 40px !important;
+      height: 40px !important;
+    }
   }
 </style>
 </head>
@@ -740,6 +772,7 @@
     </div>
   </div>
   <button id="screenFullscreen" onclick="toggleScreenFullscreen()" title="На весь экран">⛶</button>
+  <button id="remoteFullscreen" onclick="toggleRemoteFullscreen()" title="Видео на весь экран">🔲</button>
   <button id="chatToggle" onclick="toggleChat()">💬</button>
 </div>
 
@@ -823,6 +856,7 @@ function connect(name) {
       // Показываем аватар удалённого пользователя
       const remoteAvatar = $('avatar-0');
       if (remoteAvatar) remoteAvatar.style.display = 'flex';
+      $('remoteFullscreen').classList.remove('visible');
       closePC();
     } else if (msg.type === 'chat') {
       handleChatMessage(msg.sender, msg.message);
@@ -875,6 +909,7 @@ async function startPeerConnection(isInitiator) {
             remoteVideo.classList.add('hidden');
             if (remoteAvatar) remoteAvatar.style.display = 'flex';
           }
+          updateRemoteFullscreenButton();
         };
         // На мобильных трек может прийти muted — ждём unmute
         if (track.muted) {
@@ -894,6 +929,7 @@ async function startPeerConnection(isInitiator) {
     // Скрываем аватар удалённого пользователя при получении видео
     const remoteAvatar = $('avatar-0');
     if (remoteAvatar) remoteAvatar.style.display = 'none';
+    updateRemoteFullscreenButton();
     console.log('[pc] remote tracks now:', remoteStream.getTracks().map(t => ({kind: t.kind, label: t.label, muted: t.muted})));
   };
 
@@ -1200,6 +1236,38 @@ function toggleScreenFullscreen() {
       video.webkitRequestFullscreen();
     } else if (video.webkitEnterFullscreen) {
       video.webkitEnterFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(e => {});
+    } else if (document.webkitCancelFullScreen) {
+      document.webkitCancelFullScreen();
+    }
+  }
+}
+
+/* ========== FULLSCREEN ДЛЯ VIDЕО СОБЕСЕДНИКА ========== */
+function updateRemoteFullscreenButton() {
+  const btn = $('remoteFullscreen');
+  if (!btn) return;
+  const hasVideo = remoteStream && remoteStream.getTracks().some(t => t.kind === 'video' && t.readyState !== 'ended');
+  btn.classList.toggle('visible', !!hasVideo);
+}
+
+function toggleRemoteFullscreen() {
+  const video = $('remoteVideo');
+  if (!video || !video.srcObject) return;
+
+  if (isIOS) {
+    video.webkitEnterFullscreen && video.webkitEnterFullscreen();
+    return;
+  }
+
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    if (video.requestFullscreen) {
+      video.requestFullscreen().catch(e => console.log('Fullscreen error:', e));
+    } else if (video.webkitRequestFullscreen) {
+      video.webkitRequestFullscreen();
     }
   } else {
     if (document.exitFullscreen) {
