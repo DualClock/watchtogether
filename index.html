@@ -232,9 +232,11 @@ function connect(name) {
         catch (err) { console.error('handle answer error', err); }
       }
     } else if (msg.type === 'ice-candidate') {
-      if (pc) {
+      if (pc && pc.remoteDescription) {
         try { await pc.addIceCandidate(new RTCIceCandidate(msg.payload)); }
         catch (err) { console.error('addIceCandidate error', err); }
+      } else {
+        pendingCandidates.push(msg.payload);
       }
     } else if (msg.type === 'peer-left') {
       $('remoteVideo').srcObject = null;
@@ -251,6 +253,8 @@ function connect(name) {
 }
 
 /* ========== PEER CONNECTION ========== */
+let pendingCandidates = [];
+
 async function startPeerConnection(isInitiator) {
   if (pc) return;
   console.log('[pc] creating RTCPeerConnection, initiator:', isInitiator);
@@ -267,6 +271,13 @@ async function startPeerConnection(isInitiator) {
       if (!remoteStream.getTracks().includes(track)) {
         remoteStream.addTrack(track);
         track.onended = () => { try { remoteStream.removeTrack(track); } catch {} };
+        // На мобильных трек может прийти muted — ждём unmute
+        if (track.muted) {
+          track.onunmute = () => {
+            console.log('[pc] track unmuted:', track.kind);
+            $('remoteVideo').play().catch(() => {});
+          };
+        }
       }
     });
     $('remoteVideo').srcObject = null;
@@ -278,11 +289,33 @@ async function startPeerConnection(isInitiator) {
     console.log('[pc] remote tracks now:', remoteStream.getTracks().map(t => ({kind: t.kind, label: t.label, muted: t.muted})));
   };
 
-  pc.onconnectionstatechange = () => console.log('[pc] connectionState:', pc?.connectionState);
+  pc.onconnectionstatechange = () => {
+    console.log('[pc] connectionState:', pc?.connectionState);
+    if (pc?.connectionState === 'connected') {
+      $('remoteVideo').play().catch(() => {});
+    }
+  };
   pc.oniceconnectionstatechange = () => console.log('[pc] iceConnectionState:', pc?.iceConnectionState);
+
+  // Критично: автопересогласование при добавлении/удалении треков
+  pc.onnegotiationneeded = async () => {
+    if (!pc || pc.signalingState !== 'stable') return;
+    try {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      safeSend({ type: 'offer', room: currentRoom, payload: offer });
+    } catch (err) { console.error('onnegotiationneeded error', err); }
+  };
 
   // Добавляем локальные треки
   await attachLocalTracks();
+
+  // Применяем отложенные ICE кандидаты
+  while (pendingCandidates.length) {
+    const c = pendingCandidates.shift();
+    try { await pc.addIceCandidate(new RTCIceCandidate(c)); }
+    catch (err) { console.error('add pending ice candidate error', err); }
+  }
 
   if (isInitiator && pc.signalingState === 'stable') {
     try {
@@ -430,6 +463,16 @@ async function ensureMic() {
     console.error('[mic] error:', err);
   }
 }
+
+// Принудительно разблокируем воспроизведение аудио после любого клика (Safari iOS требует)
+function unlockAudio() {
+  const v = $('remoteVideo');
+  if (v && v.paused) v.play().catch(() => {});
+  document.removeEventListener('click', unlockAudio);
+  document.removeEventListener('touchstart', unlockAudio);
+}
+document.addEventListener('click', unlockAudio);
+document.addEventListener('touchstart', unlockAudio);
 
 function toggleMute() {
   if (!micStream) { ensureMic(); return; }
@@ -622,6 +665,7 @@ function hangup() {
   micEnabled = true;
   currentRoom = null;
   remoteStream = new MediaStream();
+  pendingCandidates = [];
   $('remoteVideo').srcObject = null;
   $('localVideo').srcObject = null;
   $('localVideo').style.display = 'none';
@@ -646,7 +690,18 @@ async function enterRoom() {
   if (!currentRoom) return alert('Введите ID комнаты');
   $('login').style.display = 'none';
   $('controls').style.display = 'flex';
-  await ensureMic();
+  // Запрашиваем микрофон и камеру СРАЗУ из пользовательского действия — критично для iOS/Android
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, sampleRate: 48000, channelCount: 2 }
+    });
+    micEnabled = true;
+    console.log('[mic] acquired:', micStream.getAudioTracks().map(t => t.label));
+  } catch (err) {
+    console.error('[mic] error:', err);
+    alert('Микрофон недоступен. Проверьте разрешения в настройках браузера.');
+  }
+  updateButtons();
   connect(name);
 }
 

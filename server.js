@@ -62,6 +62,7 @@ wss.on('connection', (ws) => {
     } else if (['offer', 'answer', 'ice-candidate'].includes(msg.type)) {
       const peers = rooms.get(msg.room);
       if (!peers) return;
+      console.log(`[signal] ${msg.type} in room ${msg.room} from ${peers.get(ws) || '?'}`);
       peers.forEach((name, peer) => {
         if (peer !== ws && peer.readyState === WebSocket.OPEN) {
           peer.send(JSON.stringify({ type: msg.type, room: msg.room, payload: msg.payload }));
