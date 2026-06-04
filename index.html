@@ -762,6 +762,8 @@ const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.
 let ws, pc, cameraStream, micStream, screenStream, mixedAudioStream, audioCtx, currentRoom;
 let remoteStream = new MediaStream();
 let micEnabled = true;
+let cameraEnabled = true;
+let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 const $ = id => document.getElementById(id);
 
 const config = {
@@ -824,6 +826,16 @@ function connect(name) {
       closePC();
     } else if (msg.type === 'chat') {
       handleChatMessage(msg.sender, msg.message);
+    } else if (msg.type === 'camera-state') {
+      const remoteVideo = $('remoteVideo');
+      const remoteAvatar = $('avatar-0');
+      if (!msg.enabled) {
+        remoteVideo.classList.add('hidden');
+        if (remoteAvatar) remoteAvatar.style.display = 'flex';
+      } else {
+        remoteVideo.classList.remove('hidden');
+        if (remoteAvatar) remoteAvatar.style.display = 'none';
+      }
     } else if (msg.type === 'room-users') {
       renderUsers(msg.users);
     } else if (msg.type === 'error') {
@@ -848,10 +860,22 @@ async function startPeerConnection(isInitiator) {
   pc.ontrack = (e) => {
     console.log('[pc] ontrack:', e.track.kind, e.track.label, 'muted:', e.track.muted);
     const stream = e.streams[0] || new MediaStream([e.track]);
+    // Удаляем все ended треки перед добавлением новых
+    remoteStream.getTracks().forEach(t => { if (t.readyState === 'ended') { try { remoteStream.removeTrack(t); } catch {} } });
     stream.getTracks().forEach(track => {
       if (!remoteStream.getTracks().includes(track)) {
         remoteStream.addTrack(track);
-        track.onended = () => { try { remoteStream.removeTrack(track); } catch {} };
+        track.onended = () => {
+          try { remoteStream.removeTrack(track); } catch {}
+          const remoteVideo = $('remoteVideo');
+          const remoteAvatar = $('avatar-0');
+          // Если видео больше нет — скрываем и показываем аватар
+          const hasVideo = remoteStream.getTracks().some(t => t.kind === 'video' && t.readyState !== 'ended');
+          if (!hasVideo) {
+            remoteVideo.classList.add('hidden');
+            if (remoteAvatar) remoteAvatar.style.display = 'flex';
+          }
+        };
         // На мобильных трек может прийти muted — ждём unmute
         if (track.muted) {
           track.onunmute = () => {
@@ -861,6 +885,7 @@ async function startPeerConnection(isInitiator) {
         }
       }
     });
+    // Обновляем srcObject
     $('remoteVideo').srcObject = null;
     $('remoteVideo').srcObject = remoteStream;
     $('remoteVideo').muted = false;
@@ -1082,6 +1107,7 @@ async function toggleCamera() {
       cameraStream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 60 } }
       });
+      cameraEnabled = true;
       refreshLocalPreview();
       syncMedia();
     } catch (err) {
@@ -1091,9 +1117,11 @@ async function toggleCamera() {
   } else {
     cameraStream.getTracks().forEach(t => t.stop());
     cameraStream = null;
+    cameraEnabled = false;
     refreshLocalPreview();
     syncMedia();
   }
+  safeSend({ type: 'camera-state', room: currentRoom, enabled: cameraEnabled });
   updateButtons();
 }
 
@@ -1160,11 +1188,18 @@ function toggleScreenFullscreen() {
   const video = $('localVideo');
   if (!video || !screenStream) return;
 
+  if (isIOS) {
+    alert('На iPhone/iPad нажмите на стрелку ⬆️ внизуSafari и выберите "На экран" или "Весь экран"');
+    return;
+  }
+
   if (!document.fullscreenElement && !document.webkitFullscreenElement) {
     if (video.requestFullscreen) {
       video.requestFullscreen().catch(e => console.log('Fullscreen error:', e));
     } else if (video.webkitRequestFullscreen) {
       video.webkitRequestFullscreen();
+    } else if (video.webkitEnterFullscreen) {
+      video.webkitEnterFullscreen();
     }
   } else {
     if (document.exitFullscreen) {
