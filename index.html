@@ -213,6 +213,19 @@
     object-fit: cover;
   }
 
+  .video-tile video.hidden {
+    visibility: hidden;
+  }
+
+  .video-tile .no-video-bg {
+    position: absolute;
+    inset: 0;
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .tile-avatar {
     position: absolute;
     top: 50%;
@@ -259,6 +272,32 @@
   }
 
   .tile-mic.muted { color: #e74c3c; }
+
+  /* Screen share fullscreen button */
+  #screenFullscreen {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 150;
+    transition: all 0.2s;
+  }
+
+  #screenFullscreen:hover {
+    background: rgba(255,255,255,0.25);
+  }
+
+  #screenFullscreen.visible { display: flex; }
 
   /* Chat sidebar */
   .chat-sidebar {
@@ -582,6 +621,37 @@
     .milana-title { font-size: 32px; }
     .milana-gallery img { width: 140px; height: 140px; }
     .milana-enter-btn { padding: 15px 35px; font-size: 20px; }
+
+    /* Mobile chat improvements */
+    .chat-sidebar {
+      width: 100%;
+      border-left: none;
+      border-top: 1px solid #2a2a2a;
+    }
+
+    .chat-sidebar.open {
+      height: 50vh;
+      top: auto;
+      bottom: 0;
+      transform: translateY(100%);
+    }
+
+    .chat-sidebar.open.closing {
+      transform: translateY(100%);
+    }
+
+    #chatToggle {
+      bottom: 80px;
+      right: 16px;
+    }
+
+    #controls {
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      transform: none;
+      justify-content: space-around;
+    }
   }
 </style>
 </head>
@@ -651,15 +721,12 @@
       <button id="btnScreen">🖥️</button>
       <span>ЭКРАН</span>
     </div>
-    <div class="ctrl-btn" onclick="toggleCinema()">
-      <button id="btnCinema">🎬</button>
-      <span>КИНО</span>
-    </div>
     <div class="ctrl-btn" onclick="hangup()">
       <button id="btnHangup">📞</button>
       <span>ВЫЙТИ</span>
     </div>
   </div>
+  <button id="screenFullscreen" onclick="toggleScreenFullscreen()" title="На весь экран">⛶</button>
   <button id="chatToggle" onclick="toggleChat()">💬</button>
 </div>
 
@@ -672,6 +739,7 @@
     <img src="milanaImage/photo_2026-06-04_19-59-40.jpg" alt="">
     <img src="milanaImage/photo_2026-06-04_19-59-44.jpg" alt="">
     <img src="milanaImage/photo_2026-06-04_19-59-49.jpg" alt="">
+    <img src="milanaImage/photo_2026-06-04_19-59-39 (2).jpg" alt="">
   </div>
   <button class="milana-enter-btn" onclick="closeMilanaModal()">Войти в комнату 💖</button>
 </div>
@@ -943,15 +1011,18 @@ function refreshLocalPreview() {
   const localAvatar = $('avatar-1');
   if (screenStream) {
     $('localVideo').srcObject = screenStream;
+    $('localVideo').classList.remove('hidden');
     $('localVideo').style.display = 'block';
     if (localAvatar) localAvatar.style.display = 'none';
   } else if (cameraStream) {
     $('localVideo').srcObject = cameraStream;
+    $('localVideo').classList.remove('hidden');
     $('localVideo').style.display = 'block';
     if (localAvatar) localAvatar.style.display = 'none';
   } else {
     $('localVideo').srcObject = null;
-    $('localVideo').style.display = 'none';
+    $('localVideo').classList.add('hidden');
+    $('localVideo').style.display = 'block';
     if (localAvatar) localAvatar.style.display = 'flex';
   }
 }
@@ -1048,6 +1119,7 @@ async function toggleScreen() {
 
       refreshLocalPreview();
       syncMedia();
+      $('screenFullscreen').classList.toggle('visible', !!screenStream);
     } catch (err) {
       console.error('[screen] error:', err);
       alert('Не удалось начать демонстрацию: ' + err.message);
@@ -1065,8 +1137,29 @@ async function toggleScreen() {
     cleanupAudioCtx();
     refreshLocalPreview();
     syncMedia();
+    $('screenFullscreen').classList.remove('visible');
   }
   updateButtons();
+}
+
+/* ========== FULLSCREEN ДЛЯ СТРИМА ========== */
+function toggleScreenFullscreen() {
+  const video = $('localVideo');
+  if (!video || !screenStream) return;
+
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    if (video.requestFullscreen) {
+      video.requestFullscreen().catch(e => console.log('Fullscreen error:', e));
+    } else if (video.webkitRequestFullscreen) {
+      video.webkitRequestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(e => {});
+    } else if (document.webkitCancelFullScreen) {
+      document.webkitCancelFullScreen();
+    }
+  }
 }
 
 /* ========== СИНХРОНИЗАЦИЯ МЕДИА ========== */
@@ -1113,58 +1206,6 @@ function escapeHtml(t) {
   return t.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]));
 }
 
-let cinemaMode = false;
-
-function toggleCinema() {
-  cinemaMode = !cinemaMode;
-  document.body.classList.toggle('cinema-mode', cinemaMode);
-  $('btnCinema').classList.toggle('on', cinemaMode);
-  $('cinemaToggle').style.display = cinemaMode ? 'flex' : 'none';
-  $('cinemaToggle').classList.toggle('on', cinemaMode);
-
-  const video = $('remoteVideo');
-
-  if (cinemaMode) {
-    // Пробуем Fullscreen API для видео (работает на iOS Safari)
-    if (video.webkitEnterFullscreen) {
-      // iOS Safari — нативный полноэкранный плеер
-      video.webkitEnterFullscreen();
-    } else if (video.requestFullscreen) {
-      video.requestFullscreen().catch(e => console.log('Fullscreen error:', e));
-    } else if (video.webkitRequestFullscreen) {
-      video.webkitRequestFullscreen();
-    } else {
-      // Fallback — просто CSS
-      console.log('Using CSS fallback for cinema mode');
-    }
-  } else {
-    if (document.webkitExitFullscreen) {
-      document.webkitExitFullscreen();
-    } else if (document.exitFullscreen) {
-      document.exitFullscreen().catch(e => {});
-    } else if (document.webkitCancelFullScreen) {
-      document.webkitCancelFullScreen();
-    }
-  }
-  console.log('Cinema mode:', cinemaMode);
-}
-
-// Слушаем выход из полноэкрана (ESC, жест назад, кнопка Done на iOS)
-function onFullscreenChange() {
-  const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.webkitCurrentFullScreenElement);
-  if (!isFullscreen && cinemaMode) {
-    cinemaMode = false;
-    document.body.classList.remove('cinema-mode');
-    $('btnCinema').classList.remove('on');
-    $('cinemaToggle').style.display = 'none';
-  }
-}
-
-document.addEventListener('fullscreenchange', onFullscreenChange);
-document.addEventListener('webkitfullscreenchange', onFullscreenChange);
-// iOS Safari специфичное событие
-document.addEventListener('webkitendfullscreen', onFullscreenChange);
-
 function updateButtons() {
   const camOn = !!cameraStream;
   const scrOn = !!screenStream;
@@ -1192,6 +1233,7 @@ function hangup() {
   $('remoteVideo').srcObject = null;
   $('localVideo').srcObject = null;
   $('localVideo').style.display = 'none';
+  $('screenFullscreen').classList.remove('visible');
   $('login').style.display = 'flex';
   $('callScreen').style.display = 'none';
   document.body.classList.remove('call-mode');
@@ -1263,7 +1305,8 @@ const milanaPhotos = [
   'milanaImage/photo_2026-06-04_19-57-44.jpg',
   'milanaImage/photo_2026-06-04_19-59-40.jpg',
   'milanaImage/photo_2026-06-04_19-59-44.jpg',
-  'milanaImage/photo_2026-06-04_19-59-49.jpg'
+  'milanaImage/photo_2026-06-04_19-59-49.jpg',
+  'milanaImage/photo_2026-06-04_19-59-39 (2).jpg'
 ];
 
 function startFlowers() {
