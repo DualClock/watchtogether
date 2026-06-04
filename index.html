@@ -3,34 +3,161 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>P2P Звонок</title>
+<title>Вместе</title>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #000; color: #fff; overflow: hidden; }
+  body {
+    font-family: 'Patrick Hand', cursive;
+    background: #FCF6E7;
+    color: #2d2a26;
+    overflow: hidden;
+    min-height: 100vh;
+  }
 
-  #login { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); z-index: 100; }
+  /* Paper texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  #login {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #FCF6E7;
+    z-index: 100;
+  }
+
+  .sketch-bg {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sketch-bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+  }
+
+  /* Card — hand-drawn style */
   .card {
-    background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
-    padding: 40px 32px; border-radius: 24px; backdrop-filter: blur(16px);
-    display: flex; flex-direction: column; align-items: center; gap: 14px;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.3); width: 340px;
+    position: relative;
+    z-index: 10;
+    background: #fffdf8;
+    border: 3px solid #3d3a36;
+    padding: 44px 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 340px;
+    /* Sketchy border via uneven border-radius */
+    border-radius: 8px 22px 14px 26px;
+    box-shadow: 6px 8px 0 rgba(0,0,0,0.08);
   }
-  .card h1 { font-size: 26px; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 4px; }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border: 2px dashed #c5bfb5;
+    border-radius: 12px 28px 18px 32px;
+    pointer-events: none;
+  }
+
+  .card h1 {
+    font-size: 32px;
+    font-weight: 400;
+    color: #2d2a26;
+    letter-spacing: 1px;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  /* Sketchy underline */
+  .card h1::after {
+    content: '';
+    display: block;
+    width: 90%;
+    height: 3px;
+    margin: 4px auto 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='8'%3E%3Cpath d='M2 4 Q15 2 28 5 T55 3 T82 5 T98 4' stroke='%237a9e7e' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  }
+
   .card input {
-    width: 100%; padding: 13px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15);
-    background: rgba(255,255,255,0.05); color: #fff; font-size: 15px; text-align: center;
-    outline: none; transition: border-color 0.2s;
+    width: 100%;
+    padding: 14px 16px;
+    border: 2.5px solid #3d3a36;
+    background: #fffdf8;
+    color: #2d2a26;
+    font-size: 18px;
+    font-family: 'Patrick Hand', cursive;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    border-radius: 6px 18px 8px 16px;
   }
-  .card input:focus { border-color: #0af; }
+
+  .card input::placeholder { color: #9e9890; }
+  .card input:focus {
+    border-color: #7a9e7e;
+    box-shadow: 3px 3px 0 #7a9e7e;
+  }
+
   .card button {
-    width: 100%; padding: 14px; border-radius: 12px; border: none;
-    background: #0af; color: #fff; font-size: 16px; font-weight: 500;
-    cursor: pointer; transition: all 0.2s;
+    width: 100%;
+    padding: 16px 20px;
+    border: 2.5px solid #3d3a36;
+    background: #7a9e7e;
+    color: #fffdf8;
+    font-size: 20px;
+    font-family: 'Patrick Hand', cursive;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-radius: 18px 8px 20px 10px;
+    box-shadow: 4px 5px 0 #3d3a36;
+    letter-spacing: 0.5px;
   }
-  .card button:hover { background: #0099e6; transform: translateY(-1px); }
-  .sub { font-size: 13px; color: rgba(255,255,255,0.45); margin-top: 4px; }
-  .sub a { color: #0af; text-decoration: none; cursor: pointer; }
-  .sub a:hover { text-decoration: underline; }
+
+  .card button:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 7px 0 #3d3a36;
+    background: #6b8e6e;
+  }
+
+  .card button:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 #3d3a36;
+  }
+
+  .sub {
+    font-size: 16px;
+    color: #7a7066;
+    margin-top: 4px;
+  }
+
+  .sub a {
+    color: #7a9e7e;
+    text-decoration: none;
+    cursor: pointer;
+    border-bottom: 2px dashed #7a9e7e;
+    transition: color 0.2s;
+  }
+
+  .sub a:hover { color: #5a7e5e; }
 
   #remoteVideo { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; }
   #localVideo {
@@ -97,7 +224,6 @@
   :fullscreen #participants { display: none !important; }
   :fullscreen #localVideo { display: none !important; }
   :fullscreen #cinemaToggle { display: none !important; }
-  /* iOS Safari: скрываем всё лишнее в кино-режиме */
   .cinema-mode #remoteVideo {
     position: fixed !important;
     top: 0 !important; left: 0 !important;
@@ -132,20 +258,171 @@
     #participants { top: 12px; right: 12px; max-width: 160px; padding: 10px 12px; }
     #cinemaToggle { width: 44px; height: 44px; font-size: 18px; bottom: 20px; right: 16px; }
   }
+
+  /* ===== Пасхалка для Жинка ===== */
+  #milanaModal {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #1a0a2e 0%, #16213e 50%, #0f3460 100%);
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .milana-title {
+    font-size: 48px;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 30px;
+    text-shadow: 0 0 20px #ff6b9d, 0 0 40px #ff6b9d, 0 0 60px #ff6b9d;
+    animation: pulse 1.5s ease-in-out infinite;
+    z-index: 10;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+  }
+
+  .milana-gallery {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 90vw;
+    z-index: 10;
+    margin-bottom: 30px;
+  }
+
+  .milana-gallery img {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 20px;
+    border: 4px solid rgba(255,255,255,0.3);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .milana-gallery img:nth-child(2) { animation-delay: 0.5s; }
+  .milana-gallery img:nth-child(3) { animation-delay: 1s; }
+  .milana-gallery img:nth-child(4) { animation-delay: 1.5s; }
+  .milana-gallery img:nth-child(5) { animation-delay: 2s; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+
+  .milana-enter-btn {
+    padding: 20px 50px;
+    font-size: 24px;
+    font-family: 'Patrick Hand', cursive;
+    background: linear-gradient(135deg, #ff6b9d, #c44569);
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    z-index: 10;
+    box-shadow: 0 10px 30px rgba(255,107,157,0.5);
+    transition: all 0.3s;
+  }
+
+  .milana-enter-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 15px 40px rgba(255,107,157,0.7);
+  }
+
+  /* Цветочки */
+  .flower {
+    position: fixed;
+    font-size: 40px;
+    animation: fall linear forwards;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  @keyframes fall {
+    0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(360deg); opacity: 0.3; }
+  }
+
+  /* Фейерверк */
+  .firework {
+    position: fixed;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    animation: explode  ease-out forwards;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  @keyframes explode {
+    0% { transform: translate(0, 0) scale(1); opacity: 1; }
+    50% { opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+  }
+
+  /* Падающая фотография */
+  .falling-photo {
+    position: fixed;
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 15px;
+    border: 3px solid rgba(255,255,255,0.4);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    animation: fallPhoto linear forwards;
+    z-index: 6;
+    pointer-events: none;
+  }
+
+  @keyframes fallPhoto {
+    0% { transform: translateY(-200px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(360deg); opacity: 0.2; }
+  }
+
+  @media (max-width: 640px) {
+    .milana-title { font-size: 32px; }
+    .milana-gallery img { width: 140px; height: 140px; }
+    .milana-enter-btn { padding: 15px 35px; font-size: 20px; }
+  }
 </style>
 </head>
 <body>
 
 <div id="login">
+  <!-- Hand-drawn background illustration -->
+  <div class="sketch-bg">
+    <img src="image/ChatGPT Image 4 июн. 2026 г., 19_46_19.png" alt="">
+  </div>
+
   <div class="card">
-    <h1>P2P Звонок</h1>
-    <input type="text" id="userName" placeholder="Как вас зовут?" value="Гость">
-    <input type="text" id="roomId" placeholder="ID комнаты" value="room1">
-    <button onclick="enterRoom()">🔑 Войти в комнату</button>
+    <h1>Вместе</h1>
+    <input type="text" id="userName" placeholder="Введите ваше имя" value="">
+    <input type="text" id="roomId" placeholder="Введите комнату" value="">
+    <button onclick="enterRoom()">Войти</button>
     <div class="sub">
       <a onclick="createRoom()">Создать случайную комнату</a>
     </div>
   </div>
+</div>
+
+<!-- Пасхалка для Жинка -->
+<div id="milanaModal">
+  <div class="milana-title">Приивееееееееттт жииинкааа 💕</div>
+  <div class="milana-gallery">
+    <img src="milanaImage/photo_2026-06-04_19-57-41.jpg" alt="">
+    <img src="milanaImage/photo_2026-06-04_19-57-44.jpg" alt="">
+    <img src="milanaImage/photo_2026-06-04_19-59-40.jpg" alt="">
+    <img src="milanaImage/photo_2026-06-04_19-59-44.jpg" alt="">
+    <img src="milanaImage/photo_2026-06-04_19-59-49.jpg" alt="">
+  </div>
+  <button class="milana-enter-btn" onclick="closeMilanaModal()">Войти в комнату 💖</button>
 </div>
 
 <video id="remoteVideo" autoplay playsinline></video>
@@ -688,9 +965,19 @@ async function enterRoom() {
   currentRoom = $('roomId').value.trim().toLowerCase();
   const name = $('userName').value.trim() || 'Гость';
   if (!currentRoom) return alert('Введите ID комнаты');
+
+  // Пасхалка для Жинка
+  if (name.toLowerCase() === 'жинка') {
+    showMilanaModal();
+    return;
+  }
+
+  proceedToRoom(name);
+}
+
+async function proceedToRoom(name) {
   $('login').style.display = 'none';
   $('controls').style.display = 'flex';
-  // Запрашиваем микрофон и камеру СРАЗУ из пользовательского действия — критично для iOS/Android
   try {
     micStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, sampleRate: 48000, channelCount: 2 }
@@ -703,6 +990,84 @@ async function enterRoom() {
   }
   updateButtons();
   connect(name);
+}
+
+let milanaInterval;
+
+function showMilanaModal() {
+  const modal = $('milanaModal');
+  modal.style.display = 'flex';
+
+  // Запускаем цветочки и фейерверки
+  setTimeout(() => startFlowers(), 200);
+  setTimeout(() => startFireworks(), 500);
+  milanaInterval = setInterval(() => { startFlowers(); startFireworks(); }, 4000);
+}
+
+function closeMilanaModal() {
+  clearInterval(milanaInterval);
+  $('milanaModal').style.display = 'none';
+  const name = $('userName').value.trim() || 'Гость';
+  proceedToRoom(name);
+}
+
+const flowerEmojis = ['🌸', '🌺', '🌷', '💐', '🌹', '🪷', '🌼'];
+const milanaPhotos = [
+  'milanaImage/photo_2026-06-04_19-57-41.jpg',
+  'milanaImage/photo_2026-06-04_19-57-44.jpg',
+  'milanaImage/photo_2026-06-04_19-59-40.jpg',
+  'milanaImage/photo_2026-06-04_19-59-44.jpg',
+  'milanaImage/photo_2026-06-04_19-59-49.jpg'
+];
+
+function startFlowers() {
+  for (let i = 0; i < 12; i++) {
+    setTimeout(() => {
+      const flower = document.createElement('div');
+      flower.className = 'flower';
+      flower.textContent = flowerEmojis[Math.floor(Math.random() * flowerEmojis.length)];
+      flower.style.left = Math.random() * 100 + 'vw';
+      flower.style.animationDuration = (3 + Math.random() * 4) + 's';
+      document.body.appendChild(flower);
+      setTimeout(() => flower.remove(), 7000);
+    }, i * 150);
+  }
+
+  // Падающие фотографии
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => {
+      const img = document.createElement('img');
+      img.className = 'falling-photo';
+      img.src = milanaPhotos[Math.floor(Math.random() * milanaPhotos.length)];
+      img.style.left = Math.random() * 80 + 10 + 'vw';
+      img.style.animationDuration = (4 + Math.random() * 3) + 's';
+      document.body.appendChild(img);
+      setTimeout(() => img.remove(), 8000);
+    }, i * 300);
+  }
+}
+
+const fireworkColors = ['#ff6b9d', '#ffd93d', '#6bcb77', '#4d96ff', '#ff8b94', '#c44569', '#f8b500'];
+function startFireworks() {
+  const x = Math.random() * 80 + 10;
+  const y = Math.random() * 50 + 10;
+  const color = fireworkColors[Math.floor(Math.random() * fireworkColors.length)];
+
+  for (let i = 0; i < 20; i++) {
+    const particle = document.createElement('div');
+    particle.className = 'firework';
+    const angle = (i / 20) * Math.PI * 2;
+    const distance = 60 + Math.random() * 80;
+    particle.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
+    particle.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
+    particle.style.background = color;
+    particle.style.boxShadow = `0 0 6px ${color}`;
+    particle.style.left = x + 'vw';
+    particle.style.top = y + 'vh';
+    particle.style.animationDuration = (0.8 + Math.random() * 0.5) + 's';
+    document.body.appendChild(particle);
+    setTimeout(() => particle.remove(), 1500);
+  }
 }
 
 $('roomId').addEventListener('keydown', (e) => { if (e.key === 'Enter') enterRoom(); });
