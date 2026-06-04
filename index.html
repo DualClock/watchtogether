@@ -651,6 +651,20 @@
       right: 16px;
       transform: none;
       justify-content: space-around;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    #controls.controls-hidden {
+      transform: translateY(100%) !important;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #screenFullscreen {
+      top: 12px !important;
+      right: 12px !important;
+      width: 40px !important;
+      height: 40px !important;
     }
   }
 </style>
@@ -1278,6 +1292,7 @@ async function proceedToRoom(name) {
   }
   updateButtons();
   connect(name);
+  initMobileControls();
 }
 
 let milanaInterval;
@@ -1362,6 +1377,45 @@ function startFireworks() {
 $('roomId').addEventListener('keydown', (e) => { if (e.key === 'Enter') enterRoom(); });
 $('userName').addEventListener('keydown', (e) => { if (e.key === 'Enter') enterRoom(); });
 if (location.hash) $('roomId').value = location.hash.slice(1).toLowerCase();
+
+/* ========== MOBILE CONTROLS HIDE/SHOW ========== */
+let controlsHideTimer;
+let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+function showControls() {
+  const controls = $('controls');
+  if (!isMobile) return;
+  controls.classList.remove('controls-hidden');
+  clearTimeout(controlsHideTimer);
+  controlsHideTimer = setTimeout(() => {
+    controls.classList.add('controls-hidden');
+  }, 3000);
+}
+
+function initMobileControls() {
+  if (!isMobile) return;
+  const callScreen = $('callScreen');
+  const controls = $('controls');
+
+  callScreen.addEventListener('touchstart', (e) => {
+    if (!e.target.closest('#controls') && !e.target.closest('#chatToggle') && !e.target.closest('#screenFullscreen')) {
+      showControls();
+    }
+  });
+
+  callScreen.addEventListener('click', (e) => {
+    if (!e.target.closest('#controls') && !e.target.closest('#chatToggle') && !e.target.closest('#screenFullscreen')) {
+      showControls();
+    }
+  });
+
+  controls.addEventListener('touchstart', (e) => {
+    e.stopPropagation();
+    showControls();
+  });
+
+  showControls();
+}
 </script>
 </body>
 </html>
