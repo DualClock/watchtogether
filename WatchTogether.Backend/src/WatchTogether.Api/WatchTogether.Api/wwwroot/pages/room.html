@@ -106,6 +106,8 @@
         let isAdmin = false;
         let currentUser = null;
         let isSyncing = false;
+        let syncInterval = null;
+        const SYNC_INTERVAL_MS = 5000; // Sync every 5 seconds
 
         const videoPlayer = document.getElementById('videoPlayer');
         const youtubePlayer = document.getElementById('youtubePlayer');
@@ -298,11 +300,13 @@
                 videoPlayer.addEventListener('play', async () => {
                     if (isSyncing) return;
                     await videoConnection.play(videoPlayer.currentTime);
+                    startPeriodicSync();
                 });
 
                 videoPlayer.addEventListener('pause', async () => {
                     if (isSyncing) return;
                     await videoConnection.pause(videoPlayer.currentTime);
+                    stopPeriodicSync();
                 });
 
                 videoPlayer.addEventListener('seeked', async () => {
@@ -315,7 +319,11 @@
             videoConnection.onPlay((data) => {
                 if (isAdmin) return;
                 isSyncing = true;
-                videoPlayer.currentTime = data.currentTime;
+                // Adjust for network latency
+                const now = Date.now();
+                const latency = (now - data.serverTimestamp) / 1000;
+                const adjustedTime = data.currentTime + (latency / 2);
+                videoPlayer.currentTime = Math.max(0, adjustedTime);
                 videoPlayer.play();
                 isSyncing = false;
             });
@@ -323,7 +331,10 @@
             videoConnection.onPause((data) => {
                 if (isAdmin) return;
                 isSyncing = true;
-                videoPlayer.currentTime = data.currentTime;
+                const now = Date.now();
+                const latency = (now - data.serverTimestamp) / 1000;
+                const adjustedTime = data.currentTime + (latency / 2);
+                videoPlayer.currentTime = Math.max(0, adjustedTime);
                 videoPlayer.pause();
                 isSyncing = false;
             });
@@ -337,7 +348,10 @@
 
             videoConnection.onSync((state) => {
                 if (!state.videoUrl) return;
-                loadVideo(state.videoUrl, state.videoType, state.currentTime);
+                const now = Date.now();
+                const latency = (now - state.serverTimestamp) / 1000;
+                const adjustedTime = state.currentTime + (latency / 2);
+                loadVideo(state.videoUrl, state.videoType, Math.max(0, adjustedTime));
                 if (state.isPlaying) {
                     videoPlayer.play();
                 } else {
@@ -345,9 +359,41 @@
                 }
             });
 
+            // Periodic time sync for viewers
+            videoConnection.onTimeSync((data) => {
+                if (isAdmin) return;
+                isSyncing = true;
+                const now = Date.now();
+                const latency = (now - data.serverTimestamp) / 1000;
+                const adjustedTime = data.currentTime + (latency / 2);
+                
+                // Only adjust if difference is significant (> 1 second)
+                const diff = Math.abs(videoPlayer.currentTime - adjustedTime);
+                if (diff > 1) {
+                    videoPlayer.currentTime = adjustedTime;
+                }
+                isSyncing = false;
+            });
+
             videoConnection.onChange((data) => {
                 loadVideo(data.videoUrl, data.videoType, 0);
             });
+        }
+
+        function startPeriodicSync() {
+            if (syncInterval) return;
+            syncInterval = setInterval(() => {
+                if (!videoPlayer.paused) {
+                    videoConnection.syncTime(videoPlayer.currentTime);
+                }
+            }, SYNC_INTERVAL_MS);
+        }
+
+        function stopPeriodicSync() {
+            if (syncInterval) {
+                clearInterval(syncInterval);
+                syncInterval = null;
+            }
         }
 
         async function sendMessage() {
@@ -433,6 +479,7 @@
 
         // Leave room on page unload
         window.addEventListener('beforeunload', () => {
+            stopPeriodicSync();
             chatConnection.leaveRoom(roomId);
             videoConnection.leaveRoom(roomId);
         });

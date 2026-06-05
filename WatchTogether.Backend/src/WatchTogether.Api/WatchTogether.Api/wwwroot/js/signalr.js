@@ -192,6 +192,12 @@ class VideoConnection {
             this.syncHandlers.forEach(h => h(state));
         });
 
+        this.connection.on('TimeSync', (data) => {
+            if (this.timeSyncHandlers) {
+                this.timeSyncHandlers.forEach(h => h(data));
+            }
+        });
+
         this.connection.onreconnecting(() => {
             console.log('Video reconnecting...');
             this.connected = false;
@@ -241,17 +247,22 @@ class VideoConnection {
 
     async play(currentTime) {
         if (!this.connected || !this.currentRoomId) return;
-        await this.connection.invoke('PlayVideo', this.currentRoomId, currentTime);
+        await this.connection.invoke('PlayVideo', this.currentRoomId, currentTime, Date.now());
     }
 
     async pause(currentTime) {
         if (!this.connected || !this.currentRoomId) return;
-        await this.connection.invoke('PauseVideo', this.currentRoomId, currentTime);
+        await this.connection.invoke('PauseVideo', this.currentRoomId, currentTime, Date.now());
     }
 
     async seek(currentTime) {
         if (!this.connected || !this.currentRoomId) return;
-        await this.connection.invoke('SeekVideo', this.currentRoomId, currentTime);
+        await this.connection.invoke('SeekVideo', this.currentRoomId, currentTime, Date.now());
+    }
+
+    async syncTime(currentTime) {
+        if (!this.connected || !this.currentRoomId) return;
+        await this.connection.invoke('SyncTime', this.currentRoomId, currentTime, Date.now());
     }
 
     async changeVideo(roomId, videoUrl, videoType) {
@@ -296,6 +307,14 @@ class VideoConnection {
         this.syncHandlers.push(handler);
         return () => {
             this.syncHandlers = this.syncHandlers.filter(h => h !== handler);
+        };
+    }
+
+    onTimeSync(handler) {
+        this.timeSyncHandlers = this.timeSyncHandlers || [];
+        this.timeSyncHandlers.push(handler);
+        return () => {
+            this.timeSyncHandlers = this.timeSyncHandlers.filter(h => h !== handler);
         };
     }
 }
