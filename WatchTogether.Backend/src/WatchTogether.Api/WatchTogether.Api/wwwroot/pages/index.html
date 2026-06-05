@@ -5,168 +5,252 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WatchTogether — Смотрите фильмы вместе</title>
     <link rel="stylesheet" href="/css/main.css">
-    <style>
-        .hero {
-            text-align: center;
-            padding: 80px 20px;
-            background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1a3e 50%, var(--bg-dark) 100%);
-        }
-
-        .hero h1 {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero p {
-            font-size: 1.25rem;
-            color: var(--text-secondary);
-            max-width: 600px;
-            margin: 0 auto 40px;
-        }
-
-        .hero-buttons {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .features {
-            padding: 80px 20px;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 32px;
-            margin-top: 48px;
-        }
-
-        .feature-card {
-            text-align: center;
-            padding: 32px;
-        }
-
-        .feature-icon {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 20px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            border-radius: var(--radius);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .feature-icon svg {
-            width: 32px;
-            height: 32px;
-            color: white;
-        }
-
-        .feature-card h3 {
-            font-size: 1.25rem;
-            margin-bottom: 12px;
-        }
-
-        .feature-card p {
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-
-        .cta-section {
-            text-align: center;
-            padding: 80px 20px;
-            background: var(--bg-card);
-            border-top: 1px solid var(--border);
-        }
-
-        .cta-section h2 {
-            font-size: 2.5rem;
-            margin-bottom: 16px;
-        }
-
-        .cta-section p {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-            margin-bottom: 32px;
-        }
-    </style>
 </head>
 <body>
+    <!-- Floating popcorn decorations -->
+    <svg class="popcorn" style="top:10%;left:5%;width:30px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="8" r="3"/><circle cx="8" cy="12" r="2.5"/><circle cx="16" cy="12" r="2.5"/>
+        <circle cx="10" cy="16" r="2"/><circle cx="14" cy="16" r="2"/><path d="M12 20v-4"/>
+    </svg>
+    <svg class="popcorn" style="top:20%;right:8%;width:24px;animation-delay:1s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="8" r="3"/><circle cx="8" cy="12" r="2.5"/><circle cx="16" cy="12" r="2.5"/>
+        <circle cx="10" cy="16" r="2"/><circle cx="14" cy="16" r="2"/>
+    </svg>
+    <svg class="popcorn" style="top:60%;left:3%;width:20px;animation-delay:2s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="8" r="3"/><circle cx="8" cy="12" r="2.5"/><circle cx="16" cy="12" r="2.5"/>
+    </svg>
+    <svg class="popcorn" style="top:70%;right:5%;width:28px;animation-delay:3s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="8" r="3"/><circle cx="8" cy="12" r="2.5"/><circle cx="16" cy="12" r="2.5"/>
+        <circle cx="10" cy="16" r="2"/><circle cx="14" cy="16" r="2"/>
+    </svg>
+
     <div class="page-wrapper">
-        <header class="navbar"></header>
+        <header class="navbar">
+            <a href="/" class="logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                WatchTogether
+            </a>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="/pages/rooms.html">Комнаты</a></li>
+                    <li><a href="#features">Возможности</a></li>
+                </ul>
+            </nav>
+            <div>
+                <a href="/pages/login.html" class="btn btn-secondary" style="padding:10px 24px;font-size:0.9rem;">Войти</a>
+            </div>
+        </header>
 
+        <!-- HERO -->
         <section class="hero">
-            <div class="container">
-                <h1>Смотрите фильмы вместе</h1>
-                <p>Создавайте комнаты, приглашайте друзей и наслаждайтесь совместным просмотром фильмов из любой точки мира. Общайтесь в чате и синхронизируйте воспроизведение в реальном времени.</p>
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="eye"></span>
+                    Смотрите вместе, где бы вы ни были
+                </div>
+                <h1>
+                    Смотрите фильмы<br>
+                    <span class="highlight">вместе</span> с друзьями
+                </h1>
+                <p>
+                    Создавайте комнаты, приглашайте друзей и наслаждайтесь совместным просмотром. 
+                    Синхронизация видео, чат и многое другое.
+                </p>
                 <div class="hero-buttons">
-                    <a href="rooms.html" class="btn btn-primary btn-lg">Найти комнату</a>
-                    <a href="register.html" class="btn btn-secondary btn-lg">Создать аккаунт</a>
+                    <a href="/pages/register.html" class="btn btn-primary btn-lg">
+                        Начать бесплатно
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </a>
+                    <a href="/pages/rooms.html" class="btn btn-secondary btn-lg">Найти комнату</a>
+                </div>
+
+                <!-- Illustrations -->
+                <div class="illustrations">
+                    <!-- Card 1: People watching together -->
+                    <div class="illustration-card">
+                        <svg class="svg-scene person-watch" viewBox="0 0 160 160" fill="none">
+                            <!-- Person 1 -->
+                            <circle cx="55" cy="50" r="15" stroke="#2d2d2d" stroke-width="2" fill="#faf9f7"/>
+                            <circle cx="50" cy="48" r="2" fill="#2d2d2d"/>
+                            <circle cx="60" cy="48" r="2" fill="#2d2d2d"/>
+                            <path d="M50 55 Q55 60 60 55" stroke="#2d2d2d" stroke-width="1.5" fill="none"/>
+                            <path d="M40 70 Q55 65 70 70 L70 110 L40 110 Z" stroke="#2d2d2d" stroke-width="2" fill="#e8f0e4"/>
+                            
+                            <!-- Person 2 -->
+                            <circle cx="105" cy="50" r="15" stroke="#2d2d2d" stroke-width="2" fill="#faf9f7"/>
+                            <circle cx="100" cy="48" r="2" fill="#2d2d2d"/>
+                            <circle cx="110" cy="48" r="2" fill="#2d2d2d"/>
+                            <path d="M100 55 Q105 60 110 55" stroke="#2d2d2d" stroke-width="1.5" fill="none"/>
+                            <path d="M90 70 Q105 65 120 70 L120 110 L90 110 Z" stroke="#2d2d2d" stroke-width="2" fill="#f0e8e4"/>
+                            
+                            <!-- Screen -->
+                            <rect x="30" y="115" width="100" height="8" rx="4" fill="#2d2d2d" opacity="0.1"/>
+                            <rect x="35" y="118" width="40" height="2" rx="1" fill="#7c9a6a"/>
+                            
+                            <!-- Popcorn -->
+                            <g class="popcorn-piece">
+                                <circle cx="130" cy="90" r="4" fill="#f0d090"/>
+                                <circle cx="135" cy="86" r="3.5" fill="#f0d090"/>
+                                <circle cx="128" cy="84" r="3" fill="#f0d090"/>
+                            </g>
+                        </svg>
+                        <h3>Смотрите вместе</h3>
+                        <p>Синхронное воспроизведение для всех участников комнаты</p>
+                    </div>
+
+                    <!-- Card 2: Chat & reactions -->
+                    <div class="illustration-card">
+                        <svg class="svg-scene person-wave" viewBox="0 0 160 160" fill="none">
+                            <!-- Person typing -->
+                            <circle cx="80" cy="45" r="18" stroke="#2d2d2d" stroke-width="2" fill="#faf9f7"/>
+                            <circle cx="74" cy="42" r="2.5" fill="#2d2d2d"/>
+                            <circle cx="86" cy="42" r="2.5" fill="#2d2d2d"/>
+                            <path d="M74 52 Q80 58 86 52" stroke="#2d2d2d" stroke-width="1.5" fill="none"/>
+                            <path d="M60 65 Q80 60 100 65 L95 115 L65 115 Z" stroke="#2d2d2d" stroke-width="2" fill="#e4e8f0"/>
+                            
+                            <!-- Arm waving -->
+                            <path d="M95 80 Q115 70 120 55" stroke="#2d2d2d" stroke-width="2" fill="none" stroke-linecap="round"/>
+                            <circle cx="122" cy="52" r="5" stroke="#2d2d2d" stroke-width="2" fill="#faf9f7"/>
+                            
+                            <!-- Chat bubbles -->
+                            <rect x="20" y="85" width="35" height="20" rx="10" fill="#7c9a6a" opacity="0.2"/>
+                            <rect x="25" y="90" width="20" height="4" rx="2" fill="#7c9a6a" opacity="0.4"/>
+                            
+                            <rect x="105" y="30" width="40" height="22" rx="11" fill="#f0d090" opacity="0.3"/>
+                            <rect x="110" y="36" width="25" height="4" rx="2" fill="#f0d090" opacity="0.5"/>
+                            <rect x="110" y="43" width="18" height="4" rx="2" fill="#f0d090" opacity="0.5"/>
+                        </svg>
+                        <h3>Общайтесь в чате</h3>
+                        <p>Реальное время, реакции и ответы на сообщения</p>
+                    </div>
+
+                    <!-- Card 3: Any device -->
+                    <div class="illustration-card">
+                        <svg class="svg-scene" viewBox="0 0 160 160" fill="none">
+                            <!-- Laptop -->
+                            <rect x="30" y="50" width="70" height="50" rx="4" stroke="#2d2d2d" stroke-width="2" fill="none"/>
+                            <rect x="35" y="55" width="60" height="35" rx="2" fill="#2d2d2d" opacity="0.05"/>
+                            <rect x="25" y="100" width="80" height="6" rx="3" fill="#2d2d2d" opacity="0.2"/>
+                            
+                            <!-- Phone -->
+                            <rect x="110" y="65" width="28" height="48" rx="6" stroke="#2d2d2d" stroke-width="2" fill="none"/>
+                            <rect x="114" y="72" width="20" height="32" rx="2" fill="#7c9a6a" opacity="0.15"/>
+                            
+                            <!-- Person peeking from behind -->
+                            <circle cx="75" cy="35" r="12" stroke="#2d2d2d" stroke-width="2" fill="#faf9f7"/>
+                            <circle cx="71" cy="33" r="2" fill="#2d2d2d"/>
+                            <circle cx="79" cy="33" r="2" fill="#2d2d2d"/>
+                            <path d="M71 39 Q75 43 79 39" stroke="#2d2d2d" stroke-width="1.5" fill="none"/>
+                            
+                            <!-- Connection lines -->
+                            <path d="M100 75 Q105 70 110 78" stroke="#7c9a6a" stroke-width="1.5" stroke-dasharray="4 2" fill="none"/>
+                            <circle cx="105" cy="73" r="2" fill="#7c9a6a">
+                                <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite"/>
+                            </circle>
+                        </svg>
+                        <h3>С любого устройства</h3>
+                        <p>Телефон, планшет или компьютер — всё работает</p>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section class="features">
-            <div class="container">
-                <h2 class="text-center" style="font-size: 2rem;">Возможности</h2>
-                <div class="features-grid">
-                    <div class="card feature-card">
-                        <div class="feature-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                            </svg>
-                        </div>
-                        <h3>Синхронное воспроизведение</h3>
-                        <p>Все участники видят одно и то же в одно и то же время. Play, pause и перемотка синхронизируются мгновенно.</p>
+        <!-- FEATURES -->
+        <section class="features" id="features">
+            <div class="section-header">
+                <h2>Всё для комфортного просмотра</h2>
+                <p>Мы продумали каждую деталь, чтобы вы могли наслаждаться фильмами вместе</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
                     </div>
-
-                    <div class="card feature-card">
-                        <div class="feature-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                            </svg>
-                        </div>
-                        <h3>Чат в реальном времени</h3>
-                        <p>Общайтесь с друзьями во время просмотра. Поддерживаются реакции, ответы на сообщения и системные уведомления.</p>
+                    <h3>Синхронное воспроизведение</h3>
+                    <p>Play, pause и перемотка синхронизируются мгновенно для всех участников</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                        </svg>
                     </div>
-
-                    <div class="card feature-card">
-                        <div class="feature-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                        </div>
-                        <h3>Комнаты для всех</h3>
-                        <p>Создавайте публичные, приватные или комнаты по ссылке. Управляйте участниками и правами доступа.</p>
+                    <h3>Чат в реальном времени</h3>
+                    <p>Общайтесь во время просмотра. Реакции, ответы и уведомления</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
                     </div>
+                    <h3>YouTube и файлы</h3>
+                    <p>Смотрите YouTube, загружайте свои видео или используйте ссылки</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <h3>Комнаты для всех</h3>
+                    <p>Публичные, приватные или по ссылке — выбирайте сами</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                    </div>
+                    <h3>Работает везде</h3>
+                    <p>Ничего не нужно устанавливать. Просто откройте сайт в браузере</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                    </div>
+                    <h3>Безопасность</h3>
+                    <p>Ваши данные защищены. Приватные комнаты с паролем</p>
                 </div>
             </div>
         </section>
 
+        <!-- CTA -->
         <section class="cta-section">
-            <div class="container">
+            <div class="cta-box">
                 <h2>Готовы начать?</h2>
-                <p>Присоединяйтесь к тысячам пользователей, которые уже смотрят фильмы вместе.</p>
-                <a href="register.html" class="btn btn-primary btn-lg">Начать бесплатно</a>
+                <p>Создайте комнату за 10 секунд и пригласите друзей</p>
+                <a href="/pages/register.html" class="btn btn-primary btn-lg">Создать комнату</a>
             </div>
         </section>
+
+        <!-- FOOTER -->
+        <footer class="footer">
+            <p>WatchTogether — Смотрите фильмы вместе, где бы вы ни были</p>
+        </footer>
     </div>
 
     <script src="/js/api.js"></script>
     <script>
         // If authenticated, redirect to rooms
         if (api.isAuthenticated()) {
-            window.location.href = 'rooms.html';
+            window.location.href = '/pages/rooms.html';
         }
     </script>
 </body>
