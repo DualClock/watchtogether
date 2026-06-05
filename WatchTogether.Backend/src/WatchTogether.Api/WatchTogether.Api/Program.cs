@@ -12,7 +12,30 @@ using WatchTogether.Infrastructure.Repositories;
 using WatchTogether.Infrastructure.Services;
 using WatchTogether.Infrastructure.SignalR;
 
+// Helper to convert Railway DATABASE_URL to Npgsql connection string
+static string? GetConnectionString(IConfiguration config)
+{
+    var connectionString = config.GetConnectionString("DefaultConnection");
+    
+    // If it's a URL (Railway format: postgres://user:pass@host:port/db), convert it
+    if (!string.IsNullOrEmpty(connectionString) && connectionString.StartsWith("postgres://"))
+    {
+        var uri = new Uri(connectionString);
+        var userInfo = uri.UserInfo.Split(':');
+        var username = userInfo[0];
+        var password = userInfo.Length > 1 ? userInfo[1] : "";
+        
+        return $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=True";
+    }
+    
+    return connectionString;
+}
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Get the properly formatted connection string
+var dbConnectionString = GetConnectionString(builder.Configuration) 
+    ?? throw new InvalidOperationException("Database connection string is not configured");
 
 // Add services to the container
 builder.Services.AddControllers();
@@ -57,7 +80,7 @@ builder.Services.AddSwaggerGen(options =>
 
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(dbConnectionString));
 
 // Redis
 builder.Services.AddSingleton<IRedisCacheService>(provider =>
