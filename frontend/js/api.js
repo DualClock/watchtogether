@@ -1,5 +1,7 @@
 // ===== API Client =====
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:5000' 
+    : ''; // Use relative path for production (same origin or proxy)
 
 class WatchTogetherAPI {
     constructor() {

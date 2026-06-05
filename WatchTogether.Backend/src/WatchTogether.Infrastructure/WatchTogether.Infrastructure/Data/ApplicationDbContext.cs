@@ -13,7 +13,7 @@ public class ApplicationDbContext : DbContext
     {
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseSqlServer();
+            optionsBuilder.UseNpgsql();
         }
     }
 
