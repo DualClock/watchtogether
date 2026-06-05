@@ -271,36 +271,41 @@ async function renderNavbar() {
     const userInitial = user?.displayName?.[0] || user?.username?.[0] || '?';
     const displayName = user?.displayName || user?.username || 'User';
 
-    navbar.innerHTML = `
-        <div class="container">
-            <a href="/pages/rooms.html" class="logo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
-                WatchTogether
-            </a>
-            <nav>
-                <ul class="nav-links">
-                    <li><a href="/pages/rooms.html" class="${location.pathname.includes('rooms') ? 'active' : ''}">Комнаты</a></li>
-                    ${isAuth ? `
-                        <li><a href="/pages/profile.html" class="${location.pathname.includes('profile') ? 'active' : ''}">Профиль</a></li>
-                    ` : ''}
-                </ul>
-            </nav>
-            <div class="user-menu">
-                ${isAuth ? `
-                    <span style="color: var(--text-secondary);">${displayName}</span>
-                    <div class="user-avatar" onclick="window.location.href='/pages/profile.html'">
-                        ${user?.avatarUrl ? `<img src="${API_BASE_URL}${user.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : userInitial}
-                    </div>
-                    <button class="btn btn-sm btn-secondary" onclick="handleLogout()">Выйти</button>
-                ` : `
-                    <a href="/pages/login.html" class="btn btn-sm btn-secondary">Войти</a>
-                    <a href="/pages/register.html" class="btn btn-sm btn-primary">Регистрация</a>
-                `}
-            </div>
-        </div>
+    // Keep the logo, replace nav links and user menu
+    const logo = navbar.querySelector('.logo');
+    const existingNav = navbar.querySelector('nav');
+    const existingUserMenu = navbar.querySelector('.user-menu') || navbar.querySelector('div:last-child');
+    
+    if (existingNav) existingNav.remove();
+    if (existingUserMenu && existingUserMenu !== logo?.parentElement) existingUserMenu.remove();
+
+    const nav = document.createElement('nav');
+    nav.innerHTML = `
+        <ul class="nav-links">
+            <li><a href="/pages/rooms.html" class="${location.pathname.includes('rooms') ? 'active' : ''}">Комнаты</a></li>
+            <li><a href="/pages/index.html#features" class="${location.pathname.includes('index') ? 'active' : ''}">Возможности</a></li>
+            ${isAuth ? `
+                <li><a href="/pages/profile.html" class="${location.pathname.includes('profile') ? 'active' : ''}">Профиль</a></li>
+            ` : ''}
+        </ul>
     `;
+    
+    const userMenu = document.createElement('div');
+    userMenu.className = 'user-menu';
+    userMenu.style.cssText = 'display:flex;align-items:center;gap:16px;';
+    userMenu.innerHTML = isAuth ? `
+        <span style="color: var(--text-secondary);font-size:0.9rem;font-weight:500;">${displayName}</span>
+        <div class="user-avatar" onclick="window.location.href='/pages/profile.html'" style="width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;cursor:pointer;font-size:0.875rem;">
+            ${user?.avatarUrl ? `<img src="${API_BASE_URL}${user.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : userInitial}
+        </div>
+        <button class="btn btn-secondary" onclick="handleLogout()" style="padding:8px 20px;font-size:0.85rem;">Выйти</button>
+    ` : `
+        <a href="/pages/login.html" class="btn btn-secondary" style="padding:8px 20px;font-size:0.85rem;">Войти</a>
+        <a href="/pages/register.html" class="btn btn-primary" style="padding:8px 20px;font-size:0.85rem;">Регистрация</a>
+    `;
+
+    navbar.appendChild(nav);
+    navbar.appendChild(userMenu);
 }
 
 async function handleLogout() {

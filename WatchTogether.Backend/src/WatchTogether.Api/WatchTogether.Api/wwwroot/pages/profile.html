@@ -5,12 +5,152 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Профиль — WatchTogether</title>
     <link rel="stylesheet" href="/css/main.css">
+    <style>
+        .profile-page { padding: 100px 0 48px; }
+        
+        .profile-header {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+            margin-bottom: 48px;
+            padding: 32px;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        
+        .profile-avatar-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: 800;
+            color: white;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        
+        .profile-avatar-large img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-info h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        
+        .profile-info .username {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+        
+        .profile-info .bio {
+            color: var(--text-secondary);
+            max-width: 400px;
+            line-height: 1.6;
+        }
+        
+        .profile-stats {
+            display: flex;
+            gap: 32px;
+            margin-top: 20px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .profile-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 32px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        
+        .card-header {
+            margin-bottom: 24px;
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        
+        .card-danger {
+            border-color: #e8a0a0;
+        }
+        
+        .card-danger .card-title {
+            color: #c05050;
+        }
+        
+        .btn-danger {
+            background: #c05050;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #a04040;
+        }
+        
+        .btn-block {
+            width: 100%;
+        }
+        
+        .mb-2 {
+            margin-bottom: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .profile-stats {
+                justify-content: center;
+            }
+            
+            .profile-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="page-wrapper">
         <header class="navbar"></header>
 
-        <main class="container">
+        <main class="container profile-page">
             <div class="profile-header" id="profileHeader">
                 <div class="profile-avatar-large" id="profileAvatar">
                     <div class="spinner"></div>
@@ -18,7 +158,7 @@
                 <div class="profile-info">
                     <h1 id="displayName">Загрузка...</h1>
                     <p class="username" id="username">@...</p>
-                    <p id="bio" style="color: var(--text-secondary); margin-top: 8px;"></p>
+                    <p class="bio" id="bio"></p>
                     <div class="profile-stats">
                         <div class="stat">
                             <div class="stat-value" id="status">—</div>
@@ -46,7 +186,7 @@
                             <label class="form-label">О себе</label>
                             <textarea class="form-input" id="editBio" rows="3" placeholder="Расскажите о себе..." style="resize: vertical;"></textarea>
                         </div>
-                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        <button type="submit" class="btn btn-primary btn-block">Сохранить изменения</button>
                     </form>
                 </div>
 
@@ -58,15 +198,15 @@
                         <form id="avatarForm">
                             <div class="form-group">
                                 <input type="file" class="form-input" id="avatarInput" accept="image/*">
-                                <small style="color: var(--text-muted);">Максимум 5MB (jpg, png, gif, webp)</small>
+                                <small style="color: var(--text-secondary);display:block;margin-top:8px;">Максимум 5MB (jpg, png, gif, webp)</small>
                             </div>
                             <button type="submit" class="btn btn-secondary btn-block">Загрузить аватар</button>
                         </form>
                     </div>
 
-                    <div class="card" style="border-color: var(--error);">
+                    <div class="card card-danger">
                         <div class="card-header">
-                            <h3 class="card-title" style="color: var(--error);">Опасная зона</h3>
+                            <h3 class="card-title">Опасная зона</h3>
                         </div>
                         <p style="color: var(--text-secondary); margin-bottom: 16px;">
                             Удаление аккаунта необратимо. Все ваши данные будут удалены.
@@ -108,30 +248,21 @@
             document.getElementById('status').textContent = getStatusLabel(profile.status);
             document.getElementById('joinedDate').textContent = formatDate(profile.createdAt);
 
-            // Fill edit form
             document.getElementById('editDisplayName').value = profile.displayName || '';
             document.getElementById('editBio').value = profile.bio || '';
         }
 
         function getStatusLabel(status) {
-            const labels = {
-                online: 'Онлайн',
-                offline: 'Офлайн',
-                inroom: 'В комнате',
-                away: 'Не в сети'
-            };
+            const labels = { online: 'Онлайн', offline: 'Офлайн', inroom: 'В комнате', away: 'Не в сети' };
             return labels[status] || status;
         }
 
-        // Edit profile
         document.getElementById('profileForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const data = {
                 displayName: document.getElementById('editDisplayName').value.trim(),
                 bio: document.getElementById('editBio').value.trim()
             };
-
             try {
                 const updated = await api.updateProfile(data);
                 currentProfile = updated;
@@ -142,50 +273,31 @@
             }
         });
 
-        // Upload avatar
         document.getElementById('avatarForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
             const input = document.getElementById('avatarInput');
             const file = input.files[0];
-
-            if (!file) {
-                showToast('Выберите файл', 'warning');
-                return;
-            }
-
-            if (file.size > 5 * 1024 * 1024) {
-                showToast('Файл слишком большой (макс. 5MB)', 'error');
-                return;
-            }
-
+            if (!file) { showToast('Выберите файл', 'error'); return; }
+            if (file.size > 5 * 1024 * 1024) { showToast('Файл слишком большой (макс. 5MB)', 'error'); return; }
             try {
                 const result = await api.uploadAvatar(file);
                 currentProfile.avatarUrl = result.avatarUrl;
                 renderProfile(currentProfile);
                 showToast('Аватар обновлён!', 'success');
                 input.value = '';
-            } catch (error) {
-                showToast(error.message, 'error');
-            }
+            } catch (error) { showToast(error.message, 'error'); }
         });
 
-        // Delete account
         function confirmDeleteAccount() {
             if (!confirm('Вы уверены? Это действие необратимо!')) return;
             if (!confirm('Все ваши данные будут удалены. Продолжить?')) return;
-
             api.deleteAccount()
                 .then(() => {
                     api.clearTokens();
                     showToast('Аккаунт удалён', 'success');
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 1000);
+                    setTimeout(() => window.location.href = 'login.html', 1000);
                 })
-                .catch(error => {
-                    showToast(error.message, 'error');
-                });
+                .catch(error => showToast(error.message, 'error'));
         }
 
         loadProfile();
