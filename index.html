@@ -1331,7 +1331,7 @@
       </div>
       <div class="cinema-controls">
         <div class="cinema-url-row">
-          <input type="text" id="videoUrl" placeholder="YouTube, VK, Google Drive, embed, или прямое видео" />
+          <input type="text" id="videoUrl" placeholder="YouTube, VK, Яндекс.Диск, Google Drive, embed, .mp4" />
           <button onclick="loadVideo()">Загрузить</button>
         </div>
         <div class="cinema-playback-row">
@@ -1462,10 +1462,17 @@ function extractGoogleDriveId(url) {
   return m ? m[1] : null;
 }
 
+function extractYandexDiskLink(url) {
+  // Публичная ссылка Яндекс.Диска: https://disk.yandex.ru/i/XXXX или /d/XXXX
+  const m = url.match(/disk\.yandex\.ru\/(?:i|d)\/([a-zA-Z0-9]+)/i);
+  return m ? m[1] : null;
+}
+
 function detectVideoType(url) {
   if (extractYouTubeId(url)) return 'youtube';
   if (extractVKVideoId(url)) return 'vk';
   if (extractGoogleDriveId(url)) return 'gdrive';
+  if (extractYandexDiskLink(url)) return 'yadisk';
   if (/\.(mp4|webm|ogg|m3u8)(\?.*)?$/i.test(url)) return 'direct';
   // Embed ссылки на фильмы/сериалы (femd, collaps, etc.)
   if (/\/embed\/(movie|episode|video|film|serial)/i.test(url)) return 'embed';
@@ -1561,7 +1568,9 @@ function loadVideoByUrl(url, startTime) {
   } else if (type === 'embed') {
     initEmbedPlayer(url);
   } else if (type === 'gdrive') {
-    initGoogleDrivePlayer(url, startTime || 0);
+    initGoogleDrivePlayer(url);
+  } else if (type === 'yadisk') {
+    initYandexDiskPlayer(url, startTime || 0);
   } else {
     initHtml5Player(url, startTime || 0);
   }
@@ -1644,38 +1653,62 @@ function initEmbedPlayer(url) {
   $('timeDisplay').textContent = 'Embed — управление в плеере';
 }
 
-function initGoogleDrivePlayer(url, startTime) {
+function initGoogleDrivePlayer(url) {
   const fileId = extractGoogleDriveId(url);
   if (!fileId) {
     alert('Не удалось распознать ссылку Google Drive');
     return;
   }
-  // Прямая ссылка на скачивание — Google Drive может блокировать большие файлы
-  // Используем обходной путь через googleusercontent.com
-  const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-  const proxyUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=`;
+  // Google Drive блокирует прямое скачивание видео через uc?export=download
+  // Используем iframe preview — единственный рабочий способ
+  $('vkPlayer').src = `https://drive.google.com/file/d/${fileId}/preview`;
+  $('vkPlayer').style.display = 'block';
+  $('html5Player').style.display = 'none';
+  $('ytPlayer').style.display = 'none';
+  $('playerWaiting').style.display = 'none';
+  // Google Drive iframe не поддерживает внешнее управление
+  $('videoTimeline').style.opacity = '0.3';
+  $('videoTimeline').style.pointerEvents = 'none';
+  $('btnPlayPause').style.opacity = '0.3';
+  $('btnPlayPause').style.pointerEvents = 'none';
+  updateTimeDisplay(0, 0);
+  $('timeDisplay').textContent = 'Google Drive — управление в плеере';
+}
 
-  // Пробуем прямую ссылку через iframe с video тегом
-  // Но лучше всего — через прокси или если файл публичный и небольшой
-  // Для больших файлов Google Drive требует подтверждение вируса
+function initYandexDiskPlayer(url, startTime) {
+  const publicKey = extractYandexDiskLink(url);
+  if (!publicKey) {
+    alert('Не удалось распознать ссылку Яндекс.Диска');
+    return;
+  }
+  // Яндекс.Диск API: получаем прямую ссылку на скачивание
+  const apiUrl = `https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=${encodeURIComponent(url)}`;
 
-  // Альтернатива: используем сторонний прокси или грузим через <video>
-  // Пробуем загрузить через video тег с прямой ссылкой
-  initHtml5Player(directUrl, startTime);
-
-  // Если не загрузится — покажем подсказку
-  const v = $('html5Player');
-  v.onerror = () => {
-    // Пробуем альтернативный метод — через iframe с preview
-    $('html5Player').style.display = 'none';
-    $('vkPlayer').style.display = 'block';
-    $('vkPlayer').src = `https://drive.google.com/file/d/${fileId}/preview`;
-    $('videoTimeline').style.opacity = '0.3';
-    $('videoTimeline').style.pointerEvents = 'none';
-    $('btnPlayPause').style.opacity = '0.3';
-    $('btnPlayPause').style.pointerEvents = 'none';
-    $('timeDisplay').textContent = 'Google Drive — управление в плеере';
-  };
+  fetch(apiUrl)
+    .then(r => {
+      if (!r.ok) throw new Error('API error ' + r.status);
+      return r.json();
+    })
+    .then(data => {
+      if (data.href) {
+        // Получили прямую ссылку — грузим через HTML5 video
+        initHtml5Player(data.href, startTime);
+      } else {
+        throw new Error('No download link');
+      }
+    })
+    .catch(err => {
+      console.error('Yandex.Disk error:', err);
+      // Fallback: пробуем через iframe embed
+      $('html5Player').style.display = 'none';
+      $('vkPlayer').style.display = 'block';
+      $('vkPlayer').src = `https://disk.yandex.ru/client/disk?embed=1&fileId=${publicKey}`;
+      $('videoTimeline').style.opacity = '0.3';
+      $('videoTimeline').style.pointerEvents = 'none';
+      $('btnPlayPause').style.opacity = '0.3';
+      $('btnPlayPause').style.pointerEvents = 'none';
+      $('timeDisplay').textContent = 'Яндекс.Диск — управление в плеере';
+    });
 }
 
 function initHtml5Player(url, startTime) {
