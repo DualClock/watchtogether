@@ -1,12 +1,116 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 const WebSocket = require('ws');
 
+function proxyRequest(targetUrl, res, headers) {
+  const url = new URL(targetUrl);
+  const options = {
+    hostname: url.hostname,
+    path: url.pathname + url.search,
+    method: 'GET',
+    headers: headers || {}
+  };
+  const proto = url.protocol === 'https:' ? https : http;
+  const req2 = proto.request(options, (res2) => {
+    res.writeHead(res2.statusCode, res2.headers);
+    res2.pipe(res);
+  });
+  req2.on('error', (err) => {
+    console.error('Proxy error:', err.message);
+    res.writeHead(502);
+    res.end('Proxy error');
+  });
+  req2.end();
+}
+
 const server = http.createServer((req, res) => {
+  // CORS headers for all responses
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   if (req.url === '/') {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end(fs.readFileSync(path.join(__dirname, 'index.html')));
+  } else if (req.url.startsWith('/api/yadisk')) {
+    // Proxy for Yandex.Disk API
+    const urlObj = new URL(req.url, `http://${req.headers.host}`);
+    const publicKey = urlObj.searchParams.get('public_key');
+    if (!publicKey) {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'Missing public_key' }));
+      return;
+    }
+    const apiUrl = `https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=${encodeURIComponent(publicKey)}`;
+    https.get(apiUrl, (apiRes) => {
+      let data = '';
+      apiRes.on('data', chunk => data += chunk);
+      apiRes.on('end', () => {
+        res.writeHead(apiRes.statusCode, { 'Content-Type': 'application/json' });
+        res.end(data);
+      });
+    }).on('error', (err) => {
+      console.error('Yandex API error:', err.message);
+      res.writeHead(502);
+      res.end(JSON.stringify({ error: err.message }));
+    });
+  } else if (req.url.startsWith('/proxy')) {
+    // Generic proxy for video files (bypass CORS)
+    const urlObj = new URL(req.url, `http://${req.headers.host}`);
+    const targetUrl = urlObj.searchParams.get('url');
+    if (!targetUrl) {
+      res.writeHead(400);
+      res.end('Missing url parameter');
+      return;
+    }
+    proxyRequest(targetUrl, res);
+  } else if (req.url.startsWith('/movies/')) {
+    // Stream video files with range support
+    const filePath = path.join(__dirname, decodeURIComponent(req.url));
+    fs.stat(filePath, (err, stats) => {
+      if (err || !stats.isFile()) {
+        res.writeHead(404);
+        res.end('Not found');
+        return;
+      }
+      const ext = path.extname(filePath).toLowerCase();
+      const contentTypes = {
+        '.mp4': 'video/mp4',
+        '.webm': 'video/webm',
+        '.ogg': 'video/ogg',
+        '.m3u8': 'application/vnd.apple.mpegurl',
+        '.ts': 'video/mp2t'
+      };
+      const contentType = contentTypes[ext] || 'application/octet-stream';
+      const range = req.headers.range;
+      if (range) {
+        const parts = range.replace(/bytes=/, '').split('-');
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : stats.size - 1;
+        const chunksize = end - start + 1;
+        res.writeHead(206, {
+          'Content-Range': `bytes ${start}-${end}/${stats.size}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': chunksize,
+          'Content-Type': contentType
+        });
+        fs.createReadStream(filePath, { start, end }).pipe(res);
+      } else {
+        res.writeHead(200, {
+          'Content-Length': stats.size,
+          'Content-Type': contentType
+        });
+        fs.createReadStream(filePath).pipe(res);
+      }
+    });
   } else if (req.url.startsWith('/image/') || req.url.startsWith('/milanaImage/')) {
     const filePath = path.join(__dirname, decodeURIComponent(req.url));
     const ext = path.extname(filePath);

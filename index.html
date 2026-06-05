@@ -1331,7 +1331,7 @@
       </div>
       <div class="cinema-controls">
         <div class="cinema-url-row">
-          <input type="text" id="videoUrl" placeholder="YouTube, VK, Яндекс.Диск, Google Drive, embed, .mp4" />
+          <input type="text" id="videoUrl" placeholder="Ссылка на видео или /movies/файл.mp4" />
           <button onclick="loadVideo()">Загрузить</button>
         </div>
         <div class="cinema-playback-row">
@@ -1473,6 +1473,7 @@ function detectVideoType(url) {
   if (extractVKVideoId(url)) return 'vk';
   if (extractGoogleDriveId(url)) return 'gdrive';
   if (extractYandexDiskLink(url)) return 'yadisk';
+  if (/^\/movies\//i.test(url)) return 'direct';
   if (/\.(mp4|webm|ogg|m3u8)(\?.*)?$/i.test(url)) return 'direct';
   // Embed ссылки на фильмы/сериалы (femd, collaps, etc.)
   if (/\/embed\/(movie|episode|video|film|serial)/i.test(url)) return 'embed';
@@ -1544,7 +1545,15 @@ function loadVideo() {
 }
 
 function loadVideoByUrl(url, startTime) {
-  const type = detectVideoType(url);
+  let type = detectVideoType(url);
+  let videoUrl = url;
+
+  // Локальные файлы /movies/ — добавляем хост если нужно
+  if (url.startsWith('/movies/')) {
+    videoUrl = location.origin + url;
+    type = 'direct';
+  }
+
   currentVideoUrl = url;
   currentVideoType = type;
   showPlayer(type);
@@ -1572,7 +1581,7 @@ function loadVideoByUrl(url, startTime) {
   } else if (type === 'yadisk') {
     initYandexDiskPlayer(url, startTime || 0);
   } else {
-    initHtml5Player(url, startTime || 0);
+    initHtml5Player(videoUrl, startTime || 0);
   }
 }
 
@@ -1681,33 +1690,29 @@ function initYandexDiskPlayer(url, startTime) {
     alert('Не удалось распознать ссылку Яндекс.Диска');
     return;
   }
-  // Яндекс.Диск API: получаем прямую ссылку на скачивание
-  const apiUrl = `https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=${encodeURIComponent(url)}`;
+  // Используем серверный прокси чтобы обойти CORS
+  const proxyApiUrl = `${location.protocol}//${location.host}/api/yadisk?public_key=${encodeURIComponent(url)}`;
 
-  fetch(apiUrl)
+  fetch(proxyApiUrl)
     .then(r => {
       if (!r.ok) throw new Error('API error ' + r.status);
       return r.json();
     })
     .then(data => {
       if (data.href) {
-        // Получили прямую ссылку — грузим через HTML5 video
-        initHtml5Player(data.href, startTime);
+        // Получили прямую ссылку — используем серверный прокси для видео тоже (обход CORS)
+        const proxyVideoUrl = `${location.protocol}//${location.host}/proxy?url=${encodeURIComponent(data.href)}`;
+        initHtml5Player(proxyVideoUrl, startTime);
+      } else if (data.error) {
+        throw new Error(data.error);
       } else {
         throw new Error('No download link');
       }
     })
     .catch(err => {
       console.error('Yandex.Disk error:', err);
-      // Fallback: пробуем через iframe embed
-      $('html5Player').style.display = 'none';
-      $('vkPlayer').style.display = 'block';
-      $('vkPlayer').src = `https://disk.yandex.ru/client/disk?embed=1&fileId=${publicKey}`;
-      $('videoTimeline').style.opacity = '0.3';
-      $('videoTimeline').style.pointerEvents = 'none';
-      $('btnPlayPause').style.opacity = '0.3';
-      $('btnPlayPause').style.pointerEvents = 'none';
-      $('timeDisplay').textContent = 'Яндекс.Диск — управление в плеере';
+      alert('Не удалось получить видео с Яндекс.Диска. Попробуйте другую ссылку или источник.');
+      resetPlayer();
     });
 }
 
