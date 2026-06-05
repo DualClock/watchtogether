@@ -15,7 +15,29 @@ using WatchTogether.Infrastructure.SignalR;
 // Helper to convert Railway DATABASE_URL to Npgsql connection string
 static string? GetConnectionString(IConfiguration config)
 {
+    // Try ConnectionStrings__DefaultConnection first
     var connectionString = config.GetConnectionString("DefaultConnection");
+    
+    // If empty, try DATABASE_URL directly from environment
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
+    }
+    
+    // If still empty, try PGHOST/PGUSER/etc variables
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        var pgHost = Environment.GetEnvironmentVariable("PGHOST");
+        var pgPort = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
+        var pgUser = Environment.GetEnvironmentVariable("PGUSER");
+        var pgPassword = Environment.GetEnvironmentVariable("PGPASSWORD");
+        var pgDatabase = Environment.GetEnvironmentVariable("PGDATABASE");
+        
+        if (!string.IsNullOrEmpty(pgHost) && !string.IsNullOrEmpty(pgUser))
+        {
+            return $"Host={pgHost};Port={pgPort};Database={pgDatabase};Username={pgUser};Password={pgPassword};SSL Mode=Require;Trust Server Certificate=True";
+        }
+    }
     
     // If it's a URL (Railway format: postgres://user:pass@host:port/db), convert it
     if (!string.IsNullOrEmpty(connectionString) && connectionString.StartsWith("postgres://"))
