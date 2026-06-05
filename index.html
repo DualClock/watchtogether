@@ -1331,7 +1331,7 @@
       </div>
       <div class="cinema-controls">
         <div class="cinema-url-row">
-          <input type="text" id="videoUrl" placeholder="YouTube, VK, embed-ссылка, или прямое видео (.mp4)" />
+          <input type="text" id="videoUrl" placeholder="YouTube, VK, Google Drive, embed, или прямое видео" />
           <button onclick="loadVideo()">Загрузить</button>
         </div>
         <div class="cinema-playback-row">
@@ -1457,9 +1457,15 @@ function extractVKVideoId(url) {
   return null;
 }
 
+function extractGoogleDriveId(url) {
+  const m = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/i);
+  return m ? m[1] : null;
+}
+
 function detectVideoType(url) {
   if (extractYouTubeId(url)) return 'youtube';
   if (extractVKVideoId(url)) return 'vk';
+  if (extractGoogleDriveId(url)) return 'gdrive';
   if (/\.(mp4|webm|ogg|m3u8)(\?.*)?$/i.test(url)) return 'direct';
   // Embed ссылки на фильмы/сериалы (femd, collaps, etc.)
   if (/\/embed\/(movie|episode|video|film|serial)/i.test(url)) return 'embed';
@@ -1554,6 +1560,8 @@ function loadVideoByUrl(url, startTime) {
     initVKPlayer(url);
   } else if (type === 'embed') {
     initEmbedPlayer(url);
+  } else if (type === 'gdrive') {
+    initGoogleDrivePlayer(url, startTime || 0);
   } else {
     initHtml5Player(url, startTime || 0);
   }
@@ -1634,6 +1642,40 @@ function initEmbedPlayer(url) {
   $('btnPlayPause').style.pointerEvents = 'none';
   updateTimeDisplay(0, 0);
   $('timeDisplay').textContent = 'Embed — управление в плеере';
+}
+
+function initGoogleDrivePlayer(url, startTime) {
+  const fileId = extractGoogleDriveId(url);
+  if (!fileId) {
+    alert('Не удалось распознать ссылку Google Drive');
+    return;
+  }
+  // Прямая ссылка на скачивание — Google Drive может блокировать большие файлы
+  // Используем обходной путь через googleusercontent.com
+  const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+  const proxyUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=`;
+
+  // Пробуем прямую ссылку через iframe с video тегом
+  // Но лучше всего — через прокси или если файл публичный и небольшой
+  // Для больших файлов Google Drive требует подтверждение вируса
+
+  // Альтернатива: используем сторонний прокси или грузим через <video>
+  // Пробуем загрузить через video тег с прямой ссылкой
+  initHtml5Player(directUrl, startTime);
+
+  // Если не загрузится — покажем подсказку
+  const v = $('html5Player');
+  v.onerror = () => {
+    // Пробуем альтернативный метод — через iframe с preview
+    $('html5Player').style.display = 'none';
+    $('vkPlayer').style.display = 'block';
+    $('vkPlayer').src = `https://drive.google.com/file/d/${fileId}/preview`;
+    $('videoTimeline').style.opacity = '0.3';
+    $('videoTimeline').style.pointerEvents = 'none';
+    $('btnPlayPause').style.opacity = '0.3';
+    $('btnPlayPause').style.pointerEvents = 'none';
+    $('timeDisplay').textContent = 'Google Drive — управление в плеере';
+  };
 }
 
 function initHtml5Player(url, startTime) {
