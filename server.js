@@ -35,17 +35,26 @@ const server = http.createServer((req, res) => {
 });
 
 const wss = new WebSocket.Server({ server });
-const rooms = new Map(); // roomId -> Map<ws, name>
+const rooms = new Map(); // roomId -> Map<ws, { name, mode }>
 
 function broadcastUsers(room) {
   if (!rooms.has(room)) return;
   const peers = rooms.get(room);
-  const users = Array.from(peers.values());
-  peers.forEach((name, peer) => {
+  const users = Array.from(peers.values()).map(v => v.name);
+  peers.forEach((data, peer) => {
     if (peer.readyState === WebSocket.OPEN) {
       peer.send(JSON.stringify({ type: 'room-users', room, users }));
     }
   });
+}
+
+function getOtherPeer(room, ws) {
+  const peers = rooms.get(room);
+  if (!peers) return null;
+  for (const [peer, data] of peers) {
+    if (peer !== ws && peer.readyState === WebSocket.OPEN) return peer;
+  }
+  return null;
 }
 
 wss.on('connection', (ws) => {
@@ -58,6 +67,7 @@ wss.on('connection', (ws) => {
     if (msg.type === 'join') {
       currentRoom = msg.room;
       const userName = msg.name || 'Гость';
+      const userMode = msg.mode || 'call';
       if (!rooms.has(currentRoom)) rooms.set(currentRoom, new Map());
       const peers = rooms.get(currentRoom);
 
@@ -70,23 +80,54 @@ wss.on('connection', (ws) => {
         return;
       }
 
-      console.log(`[join] ${userName} -> ${currentRoom} (было участников: ${peers.size})`);
+      console.log(`[join] ${userName} -> ${currentRoom} mode=${userMode} (было участников: ${peers.size})`);
 
-      peers.forEach((name, peer) => {
+      // Если в комнате уже есть участник — запрашиваем у него состояние видео
+      const otherPeer = getOtherPeer(currentRoom, ws);
+      if (otherPeer && otherPeer.readyState === WebSocket.OPEN) {
+        otherPeer.send(JSON.stringify({ type: 'video:sync-request', room: currentRoom }));
+      }
+
+      peers.forEach((data, peer) => {
         if (peer !== ws && peer.readyState === WebSocket.OPEN) {
           peer.send(JSON.stringify({ type: 'peer-joined', room: currentRoom, name: userName }));
         }
       });
 
-      peers.set(ws, userName);
+      peers.set(ws, { name: userName, mode: userMode });
       broadcastUsers(currentRoom);
     } else if (['offer', 'answer', 'ice-candidate'].includes(msg.type)) {
       const peers = rooms.get(msg.room);
       if (!peers) return;
-      console.log(`[signal] ${msg.type} in room ${msg.room} from ${peers.get(ws) || '?'}`);
-      peers.forEach((name, peer) => {
+      console.log(`[signal] ${msg.type} in room ${msg.room} from ${peers.get(ws)?.name || '?'}`);
+      peers.forEach((data, peer) => {
         if (peer !== ws && peer.readyState === WebSocket.OPEN) {
           peer.send(JSON.stringify({ type: msg.type, room: msg.room, payload: msg.payload }));
+        }
+      });
+    } else if (msg.type.startsWith('video:')) {
+      // Ретранслируем все video:* сообщения другому участнику
+      const peers = rooms.get(msg.room);
+      if (!peers) return;
+      peers.forEach((data, peer) => {
+        if (peer !== ws && peer.readyState === WebSocket.OPEN) {
+          peer.send(JSON.stringify(msg));
+        }
+      });
+    } else if (msg.type === 'chat') {
+      const peers = rooms.get(msg.room);
+      if (!peers) return;
+      peers.forEach((data, peer) => {
+        if (peer !== ws && peer.readyState === WebSocket.OPEN) {
+          peer.send(JSON.stringify(msg));
+        }
+      });
+    } else if (msg.type === 'camera-state') {
+      const peers = rooms.get(msg.room);
+      if (!peers) return;
+      peers.forEach((data, peer) => {
+        if (peer !== ws && peer.readyState === WebSocket.OPEN) {
+          peer.send(JSON.stringify(msg));
         }
       });
     }
@@ -97,7 +138,7 @@ wss.on('connection', (ws) => {
       const peers = rooms.get(currentRoom);
       peers.delete(ws);
       console.log(`[leave] ${currentRoom} (осталось: ${peers.size})`);
-      peers.forEach((name, peer) => {
+      peers.forEach((data, peer) => {
         if (peer.readyState === WebSocket.OPEN) {
           peer.send(JSON.stringify({ type: 'peer-left', room: currentRoom }));
         }

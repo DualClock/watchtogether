@@ -514,6 +514,513 @@
     .ctrl-btn span { font-size: 8px; }
   }
 
+  /* ===== MODE SELECT ===== */
+  #modeSelect {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .mode-title {
+    font-size: 36px;
+    color: #2d2a26;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  .mode-cards {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .mode-card {
+    position: relative;
+    z-index: 10;
+    background: #fffdf8;
+    border: 3px solid #3d3a36;
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    width: 220px;
+    cursor: pointer;
+    border-radius: 8px 22px 14px 26px;
+    box-shadow: 6px 8px 0 rgba(0,0,0,0.08);
+    transition: all 0.2s;
+  }
+
+  .mode-card:hover {
+    transform: translate(-3px, -3px);
+    box-shadow: 9px 11px 0 rgba(0,0,0,0.12);
+    border-color: #7a9e7e;
+  }
+
+  .mode-card:active {
+    transform: translate(2px, 2px);
+    box-shadow: 3px 4px 0 rgba(0,0,0,0.08);
+  }
+
+  .mode-card .mode-icon {
+    font-size: 48px;
+  }
+
+  .mode-card .mode-name {
+    font-size: 22px;
+    color: #2d2a26;
+    text-align: center;
+  }
+
+  .mode-card .mode-desc {
+    font-size: 14px;
+    color: #7a7066;
+    text-align: center;
+  }
+
+  /* ===== CINEMA SCREEN ===== */
+  #cinemaScreen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #0a0a0a;
+    flex-direction: column;
+  }
+
+  .cinema-layout {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .cinema-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .cinema-player-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    position: relative;
+    padding: 16px;
+  }
+
+  .cinema-player-wrapper {
+    width: 100%;
+    height: 100%;
+    max-width: 1280px;
+    position: relative;
+    background: #111;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  #ytPlayer {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: none;
+  }
+
+  #html5Player {
+    width: 100%;
+    height: 100%;
+    display: none;
+    background: #000;
+  }
+
+  .cinema-waiting {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    gap: 12px;
+  }
+
+  .cinema-waiting .waiting-icon {
+    font-size: 64px;
+    opacity: 0.5;
+  }
+
+  .cinema-waiting .waiting-text {
+    font-size: 18px;
+    color: #888;
+  }
+
+  .cinema-controls {
+    background: #111;
+    border-top: 1px solid #2a2a2a;
+    padding: 12px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cinema-url-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .cinema-url-row input {
+    flex: 1;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  .cinema-url-row input:focus { border-color: #7a9e7e; }
+
+  .cinema-url-row button {
+    padding: 10px 20px;
+    background: #7a9e7e;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: 'Patrick Hand', cursive;
+    transition: background 0.15s;
+  }
+
+  .cinema-url-row button:hover { background: #6b8e6e; }
+
+  .cinema-playback-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .cinema-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #2a2a2a;
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+
+  .cinema-btn:hover { background: #3a3a3a; }
+
+  .cinema-timeline {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: #2a2a2a;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .cinema-timeline::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #7a9e7e;
+    cursor: pointer;
+  }
+
+  .cinema-timeline::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #7a9e7e;
+    cursor: pointer;
+    border: none;
+  }
+
+  .cinema-volume {
+    width: 80px;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: #2a2a2a;
+    border-radius: 2px;
+    outline: none;
+  }
+
+  .cinema-volume::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+  }
+
+  .cinema-time {
+    font-size: 12px;
+    color: #888;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-width: 90px;
+    text-align: center;
+  }
+
+  .cinema-sidebar {
+    width: 320px;
+    background: #111;
+    border-left: 1px solid #2a2a2a;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s, margin-right 0.3s;
+  }
+
+  .cinema-sidebar.collapsed {
+    width: 0;
+    margin-right: 0;
+    overflow: hidden;
+    border-left: none;
+  }
+
+  .cinema-video-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border-bottom: 1px solid #2a2a2a;
+  }
+
+  .cinema-mini-tile {
+    position: relative;
+    background: #1a1a1a;
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cinema-mini-tile video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .cinema-mini-tile .mini-name {
+    position: absolute;
+    bottom: 4px;
+    left: 6px;
+    font-size: 10px;
+    color: #fff;
+    background: rgba(0,0,0,0.6);
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  .cinema-mini-tile .mini-avatar {
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #2a2a2a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cinema-mini-tile .mini-avatar svg { width: 20px; height: 20px; fill: #555; }
+
+  .cinema-chat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .cinema-chat-header {
+    padding: 10px 12px;
+    border-bottom: 1px solid #2a2a2a;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .cinema-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .cinema-chat-input-area {
+    padding: 8px;
+    border-top: 1px solid #2a2a2a;
+    display: flex;
+    gap: 6px;
+  }
+
+  .cinema-chat-input {
+    flex: 1;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #fff;
+    font-size: 12px;
+    outline: none;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  .cinema-chat-send {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: #2ecc71;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .cinema-bottom-bar {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+    background: #1a1a1a;
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid #2a2a2a;
+  }
+
+  .cinema-bottom-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #2a2a2a;
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+
+  .cinema-bottom-btn:hover { background: #3a3a3a; }
+  .cinema-bottom-btn.on { background: #2ecc71; }
+  .cinema-bottom-btn.muted { background: #e74c3c; }
+  .cinema-bottom-btn.hangup { background: #e74c3c !important; }
+  .cinema-bottom-btn.hangup:hover { background: #c0392b !important; }
+
+  .cinema-sidebar-toggle {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  .cinema-sidebar-toggle:hover { background: #2a2a2a; }
+
+  .cinema-buffering-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    gap: 10px;
+    z-index: 10;
+    border-radius: 12px;
+  }
+
+  .cinema-buffering-overlay.visible { display: flex; }
+
+  .cinema-buffering-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255,255,255,0.2);
+    border-top-color: #7a9e7e;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 900px) {
+    .cinema-sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 280px;
+      z-index: 200;
+      transform: translateX(100%);
+      transition: transform 0.3s;
+    }
+    .cinema-sidebar.open { transform: translateX(0); }
+    .cinema-sidebar.collapsed { width: 0; }
+  }
+
+  @media (max-width: 640px) {
+    .cinema-controls { padding: 8px 10px; }
+    .cinema-url-row input { font-size: 13px; padding: 8px 10px; }
+    .cinema-url-row button { padding: 8px 14px; font-size: 13px; }
+    .cinema-playback-row { gap: 8px; }
+    .cinema-btn { width: 36px; height: 36px; font-size: 14px; }
+    .cinema-time { font-size: 11px; min-width: 70px; }
+    .cinema-volume { width: 60px; }
+    .cinema-bottom-bar { gap: 6px; padding: 6px 12px; bottom: 12px; }
+    .cinema-bottom-btn { width: 40px; height: 40px; font-size: 14px; }
+    .mode-cards { gap: 16px; }
+    .mode-card { width: 160px; padding: 24px 20px; }
+    .mode-card .mode-icon { font-size: 36px; }
+    .mode-card .mode-name { font-size: 18px; }
+  }
+
   /* ===== Пасхалка для Жинка ===== */
   #milanaModal {
     position: fixed;
@@ -707,14 +1214,33 @@
   <img src="image/ChatGPT Image 4 июн. 2026 г., 19_46_19.png" alt="">
 </div>
 
-<div id="login">
+<div id="modeSelect">
+  <div class="mode-title">Выберите режим</div>
+  <div class="mode-cards">
+    <div class="mode-card" onclick="selectMode('call')">
+      <div class="mode-icon">📹</div>
+      <div class="mode-name">Обычный звонок</div>
+      <div class="mode-desc">Видеочат 1 на 1</div>
+    </div>
+    <div class="mode-card" onclick="selectMode('cinema')">
+      <div class="mode-icon">🎬</div>
+      <div class="mode-name">Кинотеатр</div>
+      <div class="mode-desc">Смотрите вместе</div>
+    </div>
+  </div>
+</div>
+
+<div id="login" style="display:none;">
   <div class="card">
-    <h1>Вместе</h1>
+    <h1 id="loginTitle">Вместе</h1>
     <input type="text" id="userName" placeholder="Введите ваше имя" value="">
     <input type="text" id="roomId" placeholder="Введите комнату" value="">
     <button onclick="enterRoom()">Войти</button>
     <div class="sub">
       <a onclick="createRoom()">Создать случайную комнату</a>
+    </div>
+    <div class="sub">
+      <a onclick="backToMode()">← Назад к выбору режима</a>
     </div>
   </div>
 </div>
@@ -776,6 +1302,75 @@
   <button id="chatToggle" onclick="toggleChat()">💬</button>
 </div>
 
+<!-- Cinema Screen -->
+<div id="cinemaScreen">
+  <div class="cinema-layout">
+    <div class="cinema-main">
+      <div class="cinema-player-area">
+        <div class="cinema-player-wrapper" id="playerWrapper">
+          <div class="cinema-waiting" id="playerWaiting">
+            <div class="waiting-icon">🎬</div>
+            <div class="waiting-text">Вставьте ссылку на видео, чтобы начать просмотр</div>
+          </div>
+          <div id="ytPlayer"></div>
+          <video id="html5Player" controls></video>
+          <div class="cinema-buffering-overlay" id="bufferingOverlay">
+            <div class="cinema-buffering-spinner"></div>
+            <div>Собеседник загружает видео...</div>
+          </div>
+        </div>
+      </div>
+      <div class="cinema-controls">
+        <div class="cinema-url-row">
+          <input type="text" id="videoUrl" placeholder="Ссылка на YouTube или прямое видео (.mp4, .m3u8)" />
+          <button onclick="loadVideo()">Загрузить</button>
+        </div>
+        <div class="cinema-playback-row">
+          <button class="cinema-btn" id="btnPlayPause" onclick="togglePlayPause()">▶</button>
+          <span class="cinema-time" id="timeDisplay">0:00 / 0:00</span>
+          <input type="range" class="cinema-timeline" id="videoTimeline" value="0" min="0" max="100" step="0.1" oninput="onTimelineSeek(this.value)">
+          <input type="range" class="cinema-volume" id="videoVolume" value="100" min="0" max="100" oninput="onVolumeChange(this.value)">
+          <button class="cinema-btn" onclick="toggleCinemaFullscreen()">⛶</button>
+        </div>
+      </div>
+    </div>
+    <div class="cinema-sidebar" id="cinemaSidebar">
+      <div class="cinema-video-mini">
+        <div class="cinema-mini-tile" id="cinemaRemoteTile">
+          <video id="cinemaRemoteVideo" autoplay playsinline></video>
+          <div class="mini-avatar" id="cinemaRemoteAvatar">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+          <span class="mini-name" id="cinemaRemoteName">Собеседник</span>
+        </div>
+        <div class="cinema-mini-tile" id="cinemaLocalTile">
+          <video id="cinemaLocalVideo" autoplay playsinline muted></video>
+          <div class="mini-avatar" id="cinemaLocalAvatar">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+          <span class="mini-name">Вы</span>
+        </div>
+      </div>
+      <div class="cinema-chat">
+        <div class="cinema-chat-header">
+          <span>Чат <span id="cinemaChatCount">(0)</span></span>
+        </div>
+        <div class="cinema-chat-messages" id="cinemaChatMessages"></div>
+        <div class="cinema-chat-input-area">
+          <input type="text" class="cinema-chat-input" id="cinemaChatInput" placeholder="Сообщение...">
+          <button class="cinema-chat-send" id="cinemaChatSend">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="cinema-bottom-bar" id="cinemaBottomBar">
+    <button class="cinema-bottom-btn" id="btnCinemaMute" onclick="toggleMute()">🎤</button>
+    <button class="cinema-bottom-btn" id="btnCinemaCamera" onclick="toggleCamera()">📷</button>
+    <button class="cinema-bottom-btn hangup" onclick="hangup()">📞</button>
+  </div>
+  <button class="cinema-sidebar-toggle" id="cinemaSidebarToggle" onclick="toggleCinemaSidebar()">💬</button>
+</div>
+
 <!-- Пасхалка для Жинка -->
 <div id="milanaModal">
   <div class="milana-title">Приивееееееееттт жииинкааа 💕</div>
@@ -799,6 +1394,359 @@ let cameraEnabled = true;
 let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 const $ = id => document.getElementById(id);
 
+/* ========== CINEMA STATE ========== */
+let appMode = 'call'; // 'call' | 'cinema'
+let ytPlayer = null;
+let ytApiReady = false;
+let currentVideoUrl = '';
+let currentVideoType = ''; // 'youtube' | 'direct'
+let isRemoteEvent = false;
+let videoDuration = 0;
+let timelineDragging = false;
+let hlsInstance = null;
+let peerInRoom = false;
+
+/* ========== YOUTUBE API ========== */
+function loadYouTubeAPI() {
+  if (window.YT || document.getElementById('yt-api')) return;
+  const tag = document.createElement('script');
+  tag.id = 'yt-api';
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+}
+
+window.onYouTubeIframeAPIReady = function() {
+  ytApiReady = true;
+};
+
+function extractYouTubeId(url) {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function detectVideoType(url) {
+  if (extractYouTubeId(url)) return 'youtube';
+  if (/\.(mp4|webm|ogg|m3u8)(\?.*)?$/i.test(url)) return 'direct';
+  return 'direct'; // fallback
+}
+
+/* ========== MODE SELECTION ========== */
+function selectMode(mode) {
+  appMode = mode;
+  $('modeSelect').style.display = 'none';
+  $('login').style.display = 'flex';
+  $('loginTitle').textContent = mode === 'cinema' ? 'Кинотеатр 🎬' : 'Вместе';
+  if (mode === 'cinema') loadYouTubeAPI();
+}
+
+function backToMode() {
+  $('login').style.display = 'none';
+  $('modeSelect').style.display = 'flex';
+  appMode = 'call';
+}
+
+/* ========== CINEMA PLAYER ========== */
+function showPlayer(type) {
+  $('playerWaiting').style.display = 'none';
+  $('ytPlayer').style.display = type === 'youtube' ? 'block' : 'none';
+  $('html5Player').style.display = type === 'direct' ? 'block' : 'none';
+}
+
+function resetPlayer() {
+  if (ytPlayer && ytPlayer.destroy) {
+    try { ytPlayer.destroy(); } catch {}
+    ytPlayer = null;
+  }
+  if (hlsInstance) {
+    try { hlsInstance.destroy(); } catch {}
+    hlsInstance = null;
+  }
+  const v = $('html5Player');
+  v.pause();
+  v.src = '';
+  v.removeAttribute('src');
+  v.load();
+  $('ytPlayer').style.display = 'none';
+  $('html5Player').style.display = 'none';
+  $('playerWaiting').style.display = 'flex';
+  currentVideoUrl = '';
+  currentVideoType = '';
+  videoDuration = 0;
+  updateTimeDisplay(0, 0);
+  $('videoTimeline').value = 0;
+}
+
+function loadVideo() {
+  const url = $('videoUrl').value.trim();
+  if (!url) return;
+  loadVideoByUrl(url);
+  // Отправляем соседу
+  if (!isRemoteEvent) {
+    safeSend({ type: 'video:change', room: currentRoom, payload: { url, type: detectVideoType(url) } });
+  }
+}
+
+function loadVideoByUrl(url, startTime) {
+  const type = detectVideoType(url);
+  currentVideoUrl = url;
+  currentVideoType = type;
+  showPlayer(type);
+
+  if (type === 'youtube') {
+    const videoId = extractYouTubeId(url);
+    if (!videoId) return;
+    if (ytApiReady) {
+      initYouTubePlayer(videoId, startTime || 0);
+    } else {
+      // Ждём загрузки API
+      const check = setInterval(() => {
+        if (ytApiReady) {
+          clearInterval(check);
+          initYouTubePlayer(videoId, startTime || 0);
+        }
+      }, 200);
+      setTimeout(() => clearInterval(check), 10000);
+    }
+  } else {
+    initHtml5Player(url, startTime || 0);
+  }
+}
+
+function initYouTubePlayer(videoId, startTime) {
+  if (ytPlayer && ytPlayer.destroy) {
+    try { ytPlayer.destroy(); } catch {}
+  }
+  ytPlayer = new YT.Player('ytPlayer', {
+    videoId: videoId,
+    playerVars: {
+      autoplay: 1,
+      start: Math.floor(startTime),
+      controls: 0,
+      rel: 0,
+      modestbranding: 1
+    },
+    events: {
+      onReady: (e) => {
+        videoDuration = e.target.getDuration();
+        $('videoTimeline').max = videoDuration;
+        updateTimeDisplay(startTime, videoDuration);
+        startTimeUpdateLoop();
+      },
+      onStateChange: (e) => {
+        if (isRemoteEvent) return;
+        if (e.data === YT.PlayerState.PLAYING) {
+          safeSend({ type: 'video:play', room: currentRoom });
+          $('btnPlayPause').textContent = '⏸';
+        } else if (e.data === YT.PlayerState.PAUSED) {
+          safeSend({ type: 'video:pause', room: currentRoom });
+          $('btnPlayPause').textContent = '▶';
+        } else if (e.data === YT.PlayerState.BUFFERING) {
+          safeSend({ type: 'video:buffering', room: currentRoom, payload: { buffering: true } });
+        }
+      }
+    }
+  });
+}
+
+function initHtml5Player(url, startTime) {
+  const v = $('html5Player');
+  v.pause();
+
+  // HLS support
+  if (url.endsWith('.m3u8') || url.includes('.m3u8?')) {
+    if (window.Hls && Hls.isSupported()) {
+      if (hlsInstance) { try { hlsInstance.destroy(); } catch {} }
+      hlsInstance = new Hls();
+      hlsInstance.loadSource(url);
+      hlsInstance.attachMedia(v);
+    } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
+      v.src = url;
+    } else {
+      alert('HLS не поддерживается в этом браузере. Попробуйте .mp4');
+      return;
+    }
+  } else {
+    v.src = url;
+  }
+
+  v.currentTime = startTime;
+
+  v.onloadedmetadata = () => {
+    videoDuration = v.duration || 0;
+    $('videoTimeline').max = videoDuration || 100;
+    updateTimeDisplay(v.currentTime, videoDuration);
+  };
+
+  v.onplay = () => {
+    if (!isRemoteEvent) {
+      safeSend({ type: 'video:play', room: currentRoom });
+    }
+    $('btnPlayPause').textContent = '⏸';
+  };
+
+  v.onpause = () => {
+    if (!isRemoteEvent) {
+      safeSend({ type: 'video:pause', room: currentRoom });
+    }
+    $('btnPlayPause').textContent = '▶';
+  };
+
+  v.onseeked = () => {
+    if (!isRemoteEvent) {
+      safeSend({ type: 'video:seek', room: currentRoom, payload: { time: v.currentTime } });
+    }
+  };
+
+  v.onwaiting = () => {
+    if (!isRemoteEvent) {
+      safeSend({ type: 'video:buffering', room: currentRoom, payload: { buffering: true } });
+    }
+  };
+
+  v.onplaying = () => {
+    if (!isRemoteEvent) {
+      safeSend({ type: 'video:buffering', room: currentRoom, payload: { buffering: false } });
+    }
+  };
+
+  startTimeUpdateLoop();
+}
+
+function togglePlayPause() {
+  if (currentVideoType === 'youtube' && ytPlayer) {
+    const state = ytPlayer.getPlayerState();
+    if (state === YT.PlayerState.PLAYING) {
+      ytPlayer.pauseVideo();
+    } else {
+      ytPlayer.playVideo();
+    }
+  } else if (currentVideoType === 'direct') {
+    const v = $('html5Player');
+    if (v.paused) v.play(); else v.pause();
+  }
+}
+
+function onTimelineSeek(value) {
+  timelineDragging = true;
+  const time = parseFloat(value);
+  if (currentVideoType === 'youtube' && ytPlayer) {
+    ytPlayer.seekTo(time, true);
+  } else if (currentVideoType === 'direct') {
+    $('html5Player').currentTime = time;
+  }
+  if (!isRemoteEvent) {
+    safeSend({ type: 'video:seek', room: currentRoom, payload: { time } });
+  }
+  setTimeout(() => { timelineDragging = false; }, 150);
+}
+
+function onVolumeChange(value) {
+  const vol = parseInt(value) / 100;
+  if (currentVideoType === 'youtube' && ytPlayer) {
+    ytPlayer.setVolume(parseInt(value));
+  } else {
+    $('html5Player').volume = vol;
+  }
+}
+
+function getCurrentTime() {
+  if (currentVideoType === 'youtube' && ytPlayer) {
+    return ytPlayer.getCurrentTime() || 0;
+  } else if (currentVideoType === 'direct') {
+    return $('html5Player').currentTime || 0;
+  }
+  return 0;
+}
+
+function getPlayerState() {
+  if (currentVideoType === 'youtube' && ytPlayer) {
+    return ytPlayer.getPlayerState() === YT.PlayerState.PLAYING;
+  } else if (currentVideoType === 'direct') {
+    return !$('html5Player').paused;
+  }
+  return false;
+}
+
+function startTimeUpdateLoop() {
+  if (appMode !== 'cinema') return;
+  function tick() {
+    if (appMode !== 'cinema') return;
+    if (!timelineDragging) {
+      const t = getCurrentTime();
+      const d = videoDuration;
+      $('videoTimeline').value = t;
+      updateTimeDisplay(t, d);
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function updateTimeDisplay(current, duration) {
+  $('timeDisplay').textContent = formatTime(current) + ' / ' + formatTime(duration);
+}
+
+function formatTime(s) {
+  if (!s || isNaN(s)) return '0:00';
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  if (m >= 60) {
+    const h = Math.floor(m / 60);
+    return h + ':' + String(m % 60).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+  }
+  return m + ':' + String(sec).padStart(2, '0');
+}
+
+function toggleCinemaFullscreen() {
+  const wrapper = $('playerWrapper');
+  if (!document.fullscreenElement) {
+    wrapper.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+function toggleCinemaSidebar() {
+  const sb = $('cinemaSidebar');
+  sb.classList.toggle('open');
+}
+
+function showBuffering(show) {
+  $('bufferingOverlay').classList.toggle('visible', show);
+}
+
+/* ========== CINEMA CHAT ========== */
+function sendCinemaChatMessage() {
+  const input = $('cinemaChatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const name = $('userName').value.trim() || 'Гость';
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'chat', room: currentRoom, sender: name, message: msg }));
+    handleCinemaChatMessage(name, msg);
+  }
+  input.value = '';
+}
+
+function handleCinemaChatMessage(sender, message) {
+  const container = $('cinemaChatMessages');
+  const isMe = sender === ($('userName').value.trim() || 'Гость');
+  container.innerHTML += `<div class="chat-msg${isMe ? ' mine' : ''}"><div class="chat-msg-avatar">${getInitials(sender)}</div><div class="chat-msg-content"><div class="chat-msg-name">${escapeHtml(sender)}</div><div class="chat-msg-text">${escapeHtml(message)}</div></div></div>`;
+  container.scrollTop = container.scrollHeight;
+  const count = container.querySelectorAll('.chat-msg').length;
+  $('cinemaChatCount').textContent = `(${count})`;
+}
+
+$('cinemaChatInput').addEventListener('keypress', e => { if (e.key === 'Enter') sendCinemaChatMessage(); });
+$('cinemaChatSend').addEventListener('click', sendCinemaChatMessage);
+
 const config = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -815,7 +1763,7 @@ function safeSend(obj) {
 /* ========== СИГНАЛИНГ ========== */
 function connect(name) {
   ws = new WebSocket(WS_URL);
-  ws.onopen = () => safeSend({ type: 'join', room: currentRoom, name });
+  ws.onopen = () => safeSend({ type: 'join', room: currentRoom, name, mode: appMode });
   ws.onerror = (e) => {
     console.error('WS error', e);
     alert('Не удалось подключиться к серверу. Запустите: node server.js');
@@ -828,6 +1776,7 @@ function connect(name) {
     console.log('[signal]', msg.type);
 
     if (msg.type === 'peer-joined') {
+      peerInRoom = true;
       await startPeerConnection(true); // initiator
     } else if (msg.type === 'offer') {
       await startPeerConnection(false); // receiver
@@ -850,16 +1799,27 @@ function connect(name) {
         pendingCandidates.push(msg.payload);
       }
     } else if (msg.type === 'peer-left') {
+      peerInRoom = false;
+      if (appMode === 'cinema') {
+        const cinemaRemoteVideo = $('cinemaRemoteVideo');
+        if (cinemaRemoteVideo) cinemaRemoteVideo.srcObject = null;
+        const cinemaRemoteAvatar = $('cinemaRemoteAvatar');
+        if (cinemaRemoteAvatar) cinemaRemoteAvatar.style.display = 'flex';
+        showBuffering(false);
+      }
       const remoteVideo = $('remoteVideo');
       if (remoteVideo) remoteVideo.srcObject = null;
       remoteStream = new MediaStream();
-      // Показываем аватар удалённого пользователя
       const remoteAvatar = $('avatar-0');
       if (remoteAvatar) remoteAvatar.style.display = 'flex';
       $('remoteFullscreen').classList.remove('visible');
       closePC();
     } else if (msg.type === 'chat') {
-      handleChatMessage(msg.sender, msg.message);
+      if (appMode === 'cinema') {
+        handleCinemaChatMessage(msg.sender, msg.message);
+      } else {
+        handleChatMessage(msg.sender, msg.message);
+      }
     } else if (msg.type === 'camera-state') {
       const remoteVideo = $('remoteVideo');
       const remoteAvatar = $('avatar-0');
@@ -875,8 +1835,92 @@ function connect(name) {
     } else if (msg.type === 'error') {
       alert(msg.message || 'Ошибка сервера');
       hangup();
+    } else if (msg.type === 'video:play') {
+      handleRemoteVideoPlay();
+    } else if (msg.type === 'video:pause') {
+      handleRemoteVideoPause();
+    } else if (msg.type === 'video:seek') {
+      handleRemoteVideoSeek(msg.payload?.time || 0);
+    } else if (msg.type === 'video:change') {
+      handleRemoteVideoChange(msg.payload?.url, msg.payload?.type);
+    } else if (msg.type === 'video:sync-request') {
+      handleSyncRequest();
+    } else if (msg.type === 'video:sync-state') {
+      handleSyncState(msg.payload);
+    } else if (msg.type === 'video:buffering') {
+      showBuffering(!!msg.payload?.buffering);
     }
   };
+}
+
+/* ========== REMOTE VIDEO HANDLERS ========== */
+function handleRemoteVideoPlay() {
+  isRemoteEvent = true;
+  if (currentVideoType === 'youtube' && ytPlayer) {
+    ytPlayer.playVideo();
+  } else if (currentVideoType === 'direct') {
+    $('html5Player').play();
+  }
+  setTimeout(() => { isRemoteEvent = false; }, 100);
+}
+
+function handleRemoteVideoPause() {
+  isRemoteEvent = true;
+  if (currentVideoType === 'youtube' && ytPlayer) {
+    ytPlayer.pauseVideo();
+  } else if (currentVideoType === 'direct') {
+    $('html5Player').pause();
+  }
+  setTimeout(() => { isRemoteEvent = false; }, 100);
+}
+
+function handleRemoteVideoSeek(time) {
+  isRemoteEvent = true;
+  if (currentVideoType === 'youtube' && ytPlayer) {
+    ytPlayer.seekTo(time, true);
+  } else if (currentVideoType === 'direct') {
+    $('html5Player').currentTime = time;
+  }
+  $('videoTimeline').value = time;
+  updateTimeDisplay(time, videoDuration);
+  setTimeout(() => { isRemoteEvent = false; }, 100);
+}
+
+function handleRemoteVideoChange(url, type) {
+  if (!url) return;
+  isRemoteEvent = true;
+  $('videoUrl').value = url;
+  loadVideoByUrl(url);
+  setTimeout(() => { isRemoteEvent = false; }, 100);
+}
+
+function handleSyncRequest() {
+  // Отправляем текущее состояние новому участнику
+  if (!currentVideoUrl) return;
+  const payload = {
+    url: currentVideoUrl,
+    type: currentVideoType,
+    time: getCurrentTime(),
+    playing: getPlayerState()
+  };
+  safeSend({ type: 'video:sync-state', room: currentRoom, payload });
+}
+
+function handleSyncState(payload) {
+  if (!payload || !payload.url) return;
+  isRemoteEvent = true;
+  $('videoUrl').value = payload.url;
+  loadVideoByUrl(payload.url, payload.time);
+  if (!payload.playing) {
+    setTimeout(() => {
+      if (currentVideoType === 'youtube' && ytPlayer) {
+        ytPlayer.pauseVideo();
+      } else if (currentVideoType === 'direct') {
+        $('html5Player').pause();
+      }
+    }, 1500);
+  }
+  setTimeout(() => { isRemoteEvent = false; }, 200);
 }
 
 /* ========== PEER CONNECTION ========== */
@@ -926,6 +1970,17 @@ async function startPeerConnection(isInitiator) {
     $('remoteVideo').muted = false;
     $('remoteVideo').volume = 1;
     $('remoteVideo').play().catch(e => console.log('play error:', e));
+    // Cinema mode: also update mini video
+    if (appMode === 'cinema') {
+      const cinemaRemoteVideo = $('cinemaRemoteVideo');
+      if (cinemaRemoteVideo) {
+        cinemaRemoteVideo.srcObject = null;
+        cinemaRemoteVideo.srcObject = remoteStream;
+        cinemaRemoteVideo.play().catch(() => {});
+      }
+      const cinemaRemoteAvatar = $('cinemaRemoteAvatar');
+      if (cinemaRemoteAvatar) cinemaRemoteAvatar.style.display = 'none';
+    }
     // Скрываем аватар удалённого пользователя при получении видео
     const remoteAvatar = $('avatar-0');
     if (remoteAvatar) remoteAvatar.style.display = 'none';
@@ -1098,6 +2153,21 @@ function refreshLocalPreview() {
     $('localVideo').classList.add('hidden');
     $('localVideo').style.display = 'block';
     if (localAvatar) localAvatar.style.display = 'flex';
+  }
+  // Cinema mode: update mini local video
+  if (appMode === 'cinema') {
+    const cinemaLocalVideo = $('cinemaLocalVideo');
+    const cinemaLocalAvatar = $('cinemaLocalAvatar');
+    if (screenStream && cinemaLocalVideo) {
+      cinemaLocalVideo.srcObject = screenStream;
+      if (cinemaLocalAvatar) cinemaLocalAvatar.style.display = 'none';
+    } else if (cameraStream && cinemaLocalVideo) {
+      cinemaLocalVideo.srcObject = cameraStream;
+      if (cinemaLocalAvatar) cinemaLocalAvatar.style.display = 'none';
+    } else if (cinemaLocalVideo) {
+      cinemaLocalVideo.srcObject = null;
+      if (cinemaLocalAvatar) cinemaLocalAvatar.style.display = 'flex';
+    }
   }
 }
 
@@ -1333,6 +2403,14 @@ function updateButtons() {
   $('btnCamera').nextElementSibling.textContent = camOn ? 'Камера вкл' : 'Камера';
   $('btnMute').nextElementSibling.textContent = !micStream ? 'Мик' : (micOn ? 'Мик вкл' : 'Мик выкл');
   $('btnScreen').nextElementSibling.textContent = scrOn ? 'Экран вкл' : 'Экран';
+  // Cinema buttons
+  if ($('btnCinemaMute')) {
+    $('btnCinemaMute').classList.toggle('on', micOn);
+    $('btnCinemaMute').classList.toggle('muted', !!micStream && !micEnabled);
+  }
+  if ($('btnCinemaCamera')) {
+    $('btnCinemaCamera').classList.toggle('on', camOn);
+  }
 }
 
 function hangup() {
@@ -1346,13 +2424,28 @@ function hangup() {
   currentRoom = null;
   remoteStream = new MediaStream();
   pendingCandidates = [];
+  peerInRoom = false;
+
+  // Reset cinema
+  resetPlayer();
+  $('videoUrl').value = '';
+  $('cinemaChatMessages').innerHTML = '';
+  $('cinemaChatCount').textContent = '(0)';
+  showBuffering(false);
+
+  // Reset call UI
   $('remoteVideo').srcObject = null;
   $('localVideo').srcObject = null;
   $('localVideo').style.display = 'none';
   $('screenFullscreen').classList.remove('visible');
-  $('login').style.display = 'flex';
+
+  // Show mode select
+  $('login').style.display = 'none';
   $('callScreen').style.display = 'none';
+  $('cinemaScreen').style.display = 'none';
+  $('modeSelect').style.display = 'flex';
   document.body.classList.remove('call-mode');
+  appMode = 'call';
   updateButtons();
 }
 
@@ -1380,8 +2473,20 @@ async function enterRoom() {
 
 async function proceedToRoom(name) {
   $('login').style.display = 'none';
-  $('callScreen').style.display = 'block';
   document.body.classList.add('call-mode');
+
+  if (appMode === 'cinema') {
+    $('cinemaScreen').style.display = 'flex';
+    // Загружаем HLS.js для cinema режима
+    if (!window.Hls) {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.0/dist/hls.min.js';
+      document.head.appendChild(s);
+    }
+  } else {
+    $('callScreen').style.display = 'block';
+  }
+
   try {
     micStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, sampleRate: 48000, channelCount: 2 }
@@ -1394,7 +2499,7 @@ async function proceedToRoom(name) {
   }
   updateButtons();
   connect(name);
-  initMobileControls();
+  if (appMode !== 'cinema') initMobileControls();
 }
 
 let milanaInterval;
@@ -1478,6 +2583,7 @@ function startFireworks() {
 
 $('roomId').addEventListener('keydown', (e) => { if (e.key === 'Enter') enterRoom(); });
 $('userName').addEventListener('keydown', (e) => { if (e.key === 'Enter') enterRoom(); });
+$('videoUrl').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadVideo(); });
 if (location.hash) $('roomId').value = location.hash.slice(1).toLowerCase();
 
 /* ========== MOBILE CONTROLS HIDE/SHOW ========== */
