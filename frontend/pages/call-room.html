@@ -23,8 +23,8 @@
         .remote-placeholder { text-align: center; color: rgba(255,255,255,0.55); }
         .remote-placeholder svg { width: 80px; height: 80px; margin-bottom: 16px; opacity: 0.5; }
         .remote-placeholder p { font-size: 0.95rem; }
-        #remoteVideo { width: 100%; height: 100%; object-fit: cover; display: none; background: #000; }
-        #remoteVideo.has-stream { display: block; }
+        #remoteVideo { width: 100%; height: 100%; object-fit: contain; display: none; background: #000; }
+        #remoteVideo.has-stream { display: block; image-rendering: auto; }
 
         .fullscreen-btn { position: absolute; top: 16px; right: 16px; width: 44px; height: 44px; border-radius: 12px; background: rgba(0,0,0,0.45); border: none; color: white; cursor: pointer; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: background 0.2s; z-index: 20; }
         .fullscreen-btn:hover { background: rgba(0,0,0,0.65); }
@@ -354,7 +354,20 @@
         async function startLocalMedia() {
             if (localStream) return;
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1920, min: 1280 },
+                        height: { ideal: 1080, min: 720 },
+                        frameRate: { ideal: 60, min: 30 },
+                        facingMode: 'user'
+                    },
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 48000,
+                        channelCount: 2
+                    }
+                });
                 localVideo.srcObject = localStream;
                 localVideo.classList.add('active');
                 pipPlaceholder.style.display = 'none';
@@ -382,6 +395,18 @@
         async function sendOffer(targetUserId) {
             try {
                 const pc = getOrCreatePeerConnection(targetUserId);
+
+                // Request high-quality video encoding
+                const transceiver = pc.getTransceivers().find(t => t.sender.track && t.sender.track.kind === 'video');
+                if (transceiver) {
+                    const params = transceiver.sender.getParameters();
+                    if (!params.encodings) params.encodings = [{}];
+                    params.encodings[0].maxBitrate = 4000000; // 4 Mbps
+                    params.encodings[0].maxFramerate = 60;
+                    params.encodings[0].priority = 'high';
+                    await transceiver.sender.setParameters(params).catch(() => {});
+                }
+
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
                 await chatConnection.connection.invoke('SendWebRtcOffer', roomId, targetUserId, offer.sdp);
@@ -463,7 +488,14 @@
                 isScreenSharing = false;
             } else {
                 try {
-                    screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+                    screenStream = await navigator.mediaDevices.getDisplayMedia({
+                        video: {
+                            width: { ideal: 1920 },
+                            height: { ideal: 1080 },
+                            frameRate: { ideal: 60 }
+                        },
+                        audio: true
+                    });
                     localVideo.srcObject = screenStream;
                     const videoTrack = screenStream.getVideoTracks()[0];
                     videoTrack.onended = () => toggleScreen();
