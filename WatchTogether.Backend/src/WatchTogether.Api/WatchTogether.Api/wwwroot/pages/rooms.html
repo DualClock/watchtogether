@@ -68,6 +68,22 @@
                     <label class="form-label">Максимум участников</label>
                     <input type="number" class="form-input" id="roomMaxUsers" value="10" min="2" max="50">
                 </div>
+                <div class="form-group">
+                    <label class="form-label">Источник видео</label>
+                    <select class="form-input" id="videoSourceType" onchange="toggleVideoSource()">
+                        <option value="url">Ссылка на видео (URL)</option>
+                        <option value="file">Загрузить файл</option>
+                    </select>
+                </div>
+                <div class="form-group" id="videoUrlGroup">
+                    <label class="form-label">Ссылка на видео</label>
+                    <input type="url" class="form-input" id="videoUrl" placeholder="https://... или YouTube ссылка">
+                    <small style="color: var(--text-secondary);">Поддерживаются: прямые ссылки, YouTube, Яндекс.Диск</small>
+                </div>
+                <div class="form-group hidden" id="videoFileGroup">
+                    <label class="form-label">Видео файл</label>
+                    <input type="file" class="form-input" id="videoFile" accept="video/*">
+                </div>
                 <button type="submit" class="btn btn-primary btn-block">Создать</button>
             </form>
         </div>
@@ -118,6 +134,12 @@
         document.getElementById('roomType').addEventListener('change', (e) => {
             document.getElementById('passwordGroup').classList.toggle('hidden', e.target.value !== 'private');
         });
+
+        function toggleVideoSource() {
+            const type = document.getElementById('videoSourceType').value;
+            document.getElementById('videoUrlGroup').classList.toggle('hidden', type !== 'url');
+            document.getElementById('videoFileGroup').classList.toggle('hidden', type !== 'file');
+        }
 
         async function loadRooms() {
             try {
@@ -229,15 +251,50 @@
             e.preventDefault();
 
             const type = document.getElementById('roomType').value;
+            const videoSourceType = document.getElementById('videoSourceType').value;
             const data = {
                 name: document.getElementById('roomName').value.trim(),
                 description: document.getElementById('roomDescription').value.trim(),
                 type: type,
-                maxUsers: parseInt(document.getElementById('roomMaxUsers').value)
+                maxUsers: parseInt(document.getElementById('roomMaxUsers').value),
+                videoType: videoSourceType
             };
 
             if (type === 'private') {
                 data.password = document.getElementById('roomPassword').value;
+            }
+
+            // Handle video source
+            if (videoSourceType === 'url') {
+                const url = document.getElementById('videoUrl').value.trim();
+                if (url) {
+                    data.videoUrl = url;
+                }
+            } else if (videoSourceType === 'file') {
+                const file = document.getElementById('videoFile').files[0];
+                if (file) {
+                    // Upload file first, then create room
+                    showToast('Загрузка видео...', 'success');
+                    try {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        
+                        const response = await fetch(`${API_BASE_URL}/api/videos/upload`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                            },
+                            body: formData
+                        });
+                        
+                        if (!response.ok) throw new Error('Upload failed');
+                        const result = await response.json();
+                        data.videoUrl = result.url;
+                    } catch (err) {
+                        showToast('Не удалось загрузить видео: ' + err.message, 'error');
+                        return;
+                    }
+                }
             }
 
             try {

@@ -12,6 +12,13 @@ public class Room
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ClosedAt { get; set; }
+    
+    // Current video
+    public string? CurrentVideoUrl { get; set; }
+    public string? CurrentVideoType { get; set; } // "file", "youtube", "yandex", etc.
+    public bool IsVideoPlaying { get; set; } = false;
+    public double VideoCurrentTime { get; set; } = 0;
+    public DateTime? VideoLastSyncAt { get; set; }
 
     // Navigation properties
     public User Creator { get; set; } = null!;

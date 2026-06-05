@@ -16,6 +16,15 @@
                 <!-- Video Section -->
                 <div class="video-section">
                     <div class="video-container" id="videoContainer">
+                        <!-- Video Player -->
+                        <video id="videoPlayer" class="hidden" controls></video>
+                        
+                        <!-- YouTube Player -->
+                        <div id="youtubePlayer" class="hidden" style="width:100%; height:100%;">
+                            <iframe id="youtubeIframe" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>
+                        </div>
+                        
+                        <!-- Placeholder when no video -->
                         <div class="video-placeholder" id="videoPlaceholder">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                 <rect x="2" y="2" width="20" height="20" rx="2.18"></rect>
@@ -28,24 +37,29 @@
                                 <line x1="17" y1="7" x2="22" y2="7"></line>
                             </svg>
                             <p>Видео не выбрано</p>
-                            <button class="btn btn-primary mt-2" onclick="document.getElementById('videoInput').click()">
-                                Загрузить видео
-                            </button>
+                            <div id="adminControls" class="hidden">
+                                <button class="btn btn-primary mt-2" onclick="document.getElementById('videoInput').click()">
+                                    Загрузить видео
+                                </button>
+                                <button class="btn btn-secondary mt-2" onclick="showUrlInput()">
+                                    Добавить ссылку
+                                </button>
+                            </div>
                             <input type="file" id="videoInput" accept="video/*" class="hidden" onchange="handleVideoUpload(this)">
                         </div>
-                        <video id="videoPlayer" class="hidden" controls></video>
                     </div>
 
-                    <div class="video-controls" id="videoControls">
-                        <button onclick="togglePlay()" id="playBtn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                            </svg>
-                        </button>
-                        <div class="progress-bar" id="progressBar" onclick="seek(event)">
-                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-                        </div>
-                        <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
+                    <!-- Admin: Change video URL -->
+                    <div class="video-url-input hidden" id="urlInputContainer">
+                        <input type="text" id="newVideoUrl" placeholder="Вставьте ссылку на видео..." class="form-input">
+                        <button class="btn btn-primary" onclick="changeVideoUrl()">Применить</button>
+                        <button class="btn btn-secondary" onclick="hideUrlInput()">Отмена</button>
+                    </div>
+
+                    <!-- Video Info -->
+                    <div class="video-info" id="videoInfo">
+                        <span id="videoStatus">Ожидание видео...</span>
+                        <span id="adminBadge" class="hidden" style="color: var(--primary);">👑 Вы админ</span>
                     </div>
                 </div>
 
@@ -89,24 +103,43 @@
 
         let room = null;
         let messages = [];
-        let isPlaying = false;
+        let isAdmin = false;
+        let currentUser = null;
         let isSyncing = false;
-        let typingTimeout;
 
         const videoPlayer = document.getElementById('videoPlayer');
+        const youtubePlayer = document.getElementById('youtubePlayer');
+        const youtubeIframe = document.getElementById('youtubeIframe');
         const videoPlaceholder = document.getElementById('videoPlaceholder');
-        const playBtn = document.getElementById('playBtn');
-        const progressBar = document.getElementById('progressBar');
-        const progressFill = document.getElementById('progressFill');
-        const timeDisplay = document.getElementById('timeDisplay');
+        const adminControls = document.getElementById('adminControls');
+        const adminBadge = document.getElementById('adminBadge');
+        const videoStatus = document.getElementById('videoStatus');
 
         async function init() {
             if (!requireAuth()) return;
 
             try {
+                // Get current user
+                currentUser = await api.getProfile();
+
+                // Load room
                 room = await api.getRoom(roomId);
                 document.getElementById('roomName').textContent = room.name;
                 document.getElementById('membersCount').textContent = `${room.members?.length || 0} участников`;
+
+                // Check if user is admin (owner or moderator)
+                const myMember = room.members?.find(m => m.userId === currentUser.id);
+                isAdmin = myMember?.role === 'owner' || myMember?.role === 'moderator';
+                
+                if (isAdmin) {
+                    adminControls.classList.remove('hidden');
+                    adminBadge.classList.remove('hidden');
+                }
+
+                // Load video if exists
+                if (room.currentVideoUrl) {
+                    loadVideo(room.currentVideoUrl, room.currentVideoType, room.videoCurrentTime || 0);
+                }
 
                 // Load messages
                 await loadMessages();
@@ -125,6 +158,42 @@
                 showToast(error.message, 'error');
                 setTimeout(() => window.location.href = 'rooms.html', 2000);
             }
+        }
+
+        function loadVideo(url, type, startTime = 0) {
+            videoPlaceholder.classList.add('hidden');
+            
+            if (isYouTubeUrl(url)) {
+                // YouTube
+                videoPlayer.classList.add('hidden');
+                youtubePlayer.classList.remove('hidden');
+                const videoId = extractYouTubeId(url);
+                youtubeIframe.src = `https://www.youtube.com/embed/${videoId}?start=${Math.floor(startTime)}&enablejsapi=1`;
+                videoStatus.textContent = 'YouTube видео';
+            } else if (url.startsWith('http')) {
+                // Direct URL
+                youtubePlayer.classList.add('hidden');
+                videoPlayer.classList.remove('hidden');
+                videoPlayer.src = url;
+                videoPlayer.currentTime = startTime;
+                videoStatus.textContent = 'Внешнее видео';
+            } else {
+                // Local file
+                youtubePlayer.classList.add('hidden');
+                videoPlayer.classList.remove('hidden');
+                videoPlayer.src = url;
+                videoPlayer.currentTime = startTime;
+                videoStatus.textContent = 'Локальное видео';
+            }
+        }
+
+        function isYouTubeUrl(url) {
+            return url && (url.includes('youtube.com') || url.includes('youtu.be'));
+        }
+
+        function extractYouTubeId(url) {
+            const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+            return match ? match[1] : '';
         }
 
         async function loadMessages() {
@@ -169,8 +238,6 @@
 
         function appendMessage(msg) {
             const container = document.getElementById('chatMessages');
-
-            // Remove empty state if present
             if (container.querySelector('.empty-state')) {
                 container.innerHTML = '';
             }
@@ -226,7 +293,27 @@
         }
 
         function setupVideoHandlers() {
+            // Only admin sends events, everyone receives
+            if (isAdmin) {
+                videoPlayer.addEventListener('play', async () => {
+                    if (isSyncing) return;
+                    await videoConnection.play(videoPlayer.currentTime);
+                });
+
+                videoPlayer.addEventListener('pause', async () => {
+                    if (isSyncing) return;
+                    await videoConnection.pause(videoPlayer.currentTime);
+                });
+
+                videoPlayer.addEventListener('seeked', async () => {
+                    if (isSyncing) return;
+                    await videoConnection.seek(videoPlayer.currentTime);
+                });
+            }
+
+            // Everyone receives sync events
             videoConnection.onPlay((data) => {
+                if (isAdmin) return;
                 isSyncing = true;
                 videoPlayer.currentTime = data.currentTime;
                 videoPlayer.play();
@@ -234,6 +321,7 @@
             });
 
             videoConnection.onPause((data) => {
+                if (isAdmin) return;
                 isSyncing = true;
                 videoPlayer.currentTime = data.currentTime;
                 videoPlayer.pause();
@@ -241,34 +329,33 @@
             });
 
             videoConnection.onSeek((data) => {
+                if (isAdmin) return;
                 isSyncing = true;
                 videoPlayer.currentTime = data.currentTime;
                 isSyncing = false;
             });
 
             videoConnection.onSync((state) => {
-                isSyncing = true;
-                if (state.currentVideoId) {
-                    // Load video by ID
-                }
-                videoPlayer.currentTime = state.currentTime;
+                if (!state.videoUrl) return;
+                loadVideo(state.videoUrl, state.videoType, state.currentTime);
                 if (state.isPlaying) {
                     videoPlayer.play();
                 } else {
                     videoPlayer.pause();
                 }
-                isSyncing = false;
+            });
+
+            videoConnection.onChange((data) => {
+                loadVideo(data.videoUrl, data.videoType, 0);
             });
         }
 
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const content = input.value.trim();
-
             if (!content) return;
 
             input.value = '';
-
             try {
                 await chatConnection.sendMessage(content);
             } catch (error) {
@@ -277,88 +364,56 @@
         }
 
         document.getElementById('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-
-            // Typing indicator
-            clearTimeout(typingTimeout);
-            chatConnection.typing();
-            typingTimeout = setTimeout(() => {}, 3000);
+            if (e.key === 'Enter') sendMessage();
         });
 
-        // Video controls
-        function handleVideoUpload(input) {
+        // Admin: Change video
+        function showUrlInput() {
+            document.getElementById('urlInputContainer').classList.remove('hidden');
+        }
+
+        function hideUrlInput() {
+            document.getElementById('urlInputContainer').classList.add('hidden');
+        }
+
+        async function changeVideoUrl() {
+            const url = document.getElementById('newVideoUrl').value.trim();
+            if (!url) return;
+
+            const type = isYouTubeUrl(url) ? 'youtube' : 'url';
+            await videoConnection.changeVideo(roomId, url, type);
+            loadVideo(url, type, 0);
+            hideUrlInput();
+        }
+
+        // Admin: Upload video file
+        async function handleVideoUpload(input) {
             const file = input.files[0];
             if (!file) return;
 
-            const url = URL.createObjectURL(file);
-            videoPlayer.src = url;
-            videoPlaceholder.classList.add('hidden');
-            videoPlayer.classList.remove('hidden');
-
-            videoPlayer.onloadedmetadata = () => {
-                updateTimeDisplay();
-            };
-        }
-
-        async function togglePlay() {
-            if (videoPlayer.paused) {
-                await videoConnection.play(videoPlayer.currentTime);
-                videoPlayer.play();
-            } else {
-                await videoConnection.pause(videoPlayer.currentTime);
-                videoPlayer.pause();
+            showToast('Загрузка видео...', 'success');
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch(`${API_BASE_URL}/api/videos/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    },
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('Upload failed');
+                const result = await response.json();
+                
+                await videoConnection.changeVideo(roomId, result.url, 'file');
+                loadVideo(result.url, 'file', 0);
+            } catch (err) {
+                showToast('Не удалось загрузить видео: ' + err.message, 'error');
             }
         }
-
-        async function seek(event) {
-            const rect = progressBar.getBoundingClientRect();
-            const percent = (event.clientX - rect.left) / rect.width;
-            const time = percent * videoPlayer.duration;
-
-            await videoConnection.seek(time);
-            videoPlayer.currentTime = time;
-        }
-
-        function updateTimeDisplay() {
-            const current = formatDuration(videoPlayer.currentTime);
-            const total = formatDuration(videoPlayer.duration || 0);
-            timeDisplay.textContent = `${current} / ${total}`;
-
-            if (videoPlayer.duration) {
-                const percent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
-                progressFill.style.width = `${percent}%`;
-            }
-        }
-
-        function formatDuration(seconds) {
-            if (!seconds || isNaN(seconds)) return '0:00';
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        videoPlayer.addEventListener('timeupdate', updateTimeDisplay);
-
-        videoPlayer.addEventListener('play', () => {
-            isPlaying = true;
-            playBtn.innerHTML = `
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="6" y="4" width="4" height="16"></rect>
-                    <rect x="14" y="4" width="4" height="16"></rect>
-                </svg>
-            `;
-        });
-
-        videoPlayer.addEventListener('pause', () => {
-            isPlaying = false;
-            playBtn.innerHTML = `
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
-            `;
-        });
 
         function stringToColor(str) {
             let hash = 0;

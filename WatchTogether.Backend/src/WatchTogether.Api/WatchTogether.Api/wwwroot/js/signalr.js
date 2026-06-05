@@ -254,9 +254,9 @@ class VideoConnection {
         await this.connection.invoke('SeekVideo', this.currentRoomId, currentTime);
     }
 
-    async changeVideo(videoId) {
-        if (!this.connected || !this.currentRoomId) return;
-        await this.connection.invoke('ChangeVideo', this.currentRoomId, videoId);
+    async changeVideo(roomId, videoUrl, videoType) {
+        if (!this.connected) return;
+        await this.connection.invoke('ChangeVideo', roomId, videoUrl, videoType);
     }
 
     async requestSync() {

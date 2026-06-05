@@ -18,6 +18,12 @@ public class RoomDetailResponse : RoomResponse
 {
     public List<RoomMemberDto> Members { get; set; } = new();
     public PlaylistDto? Playlist { get; set; }
+    
+    // Video state
+    public string? CurrentVideoUrl { get; set; }
+    public string? CurrentVideoType { get; set; }
+    public bool IsVideoPlaying { get; set; }
+    public double VideoCurrentTime { get; set; }
 }
 
 public class RoomMemberDto

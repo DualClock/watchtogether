@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using WatchTogether.Core.Entities;
 using WatchTogether.Infrastructure.Data;
 
 namespace WatchTogether.Infrastructure.SignalR;
@@ -7,7 +8,6 @@ namespace WatchTogether.Infrastructure.SignalR;
 public class VideoHub : Hub
 {
     private readonly ApplicationDbContext _context;
-    private static readonly Dictionary<Guid, VideoSyncState> _roomSyncStates = new();
 
     public VideoHub(ApplicationDbContext context)
     {
@@ -26,10 +26,25 @@ public class VideoHub : Hub
 
         await Groups.AddToGroupAsync(Context.ConnectionId, $"video-{roomId}");
 
-        // Send current sync state to new user
-        if (_roomSyncStates.TryGetValue(roomId, out var state))
+        // Send current video state to new user
+        var room = await _context.Rooms.FindAsync(roomId);
+        if (room != null && !string.IsNullOrEmpty(room.CurrentVideoUrl))
         {
-            await Clients.Caller.SendAsync("SyncState", state);
+            var adjustedTime = room.VideoCurrentTime;
+            if (room.IsVideoPlaying && room.VideoLastSyncAt.HasValue)
+            {
+                var elapsed = (DateTime.UtcNow - room.VideoLastSyncAt.Value).TotalSeconds;
+                adjustedTime += elapsed;
+            }
+
+            await Clients.Caller.SendAsync("SyncState", new VideoSyncState
+            {
+                VideoUrl = room.CurrentVideoUrl,
+                VideoType = room.CurrentVideoType,
+                IsPlaying = room.IsVideoPlaying,
+                CurrentTime = adjustedTime,
+                LastSyncAt = DateTime.UtcNow
+            });
         }
     }
 
@@ -42,49 +57,49 @@ public class VideoHub : Hub
     {
         if (!await CanControlVideo(roomId)) return;
 
-        UpdateSyncState(roomId, true, currentTime);
-        await Clients.Group($"video-{roomId}").SendAsync("VideoPlayed", new { CurrentTime = currentTime, Timestamp = DateTime.UtcNow });
+        await UpdateRoomVideoState(roomId, true, currentTime);
+        await Clients.Group($"video-{roomId}").SendAsync("VideoPlayed", new { CurrentTime = currentTime });
     }
 
     public async Task PauseVideo(Guid roomId, double currentTime)
     {
         if (!await CanControlVideo(roomId)) return;
 
-        UpdateSyncState(roomId, false, currentTime);
-        await Clients.Group($"video-{roomId}").SendAsync("VideoPaused", new { CurrentTime = currentTime, Timestamp = DateTime.UtcNow });
+        await UpdateRoomVideoState(roomId, false, currentTime);
+        await Clients.Group($"video-{roomId}").SendAsync("VideoPaused", new { CurrentTime = currentTime });
     }
 
     public async Task SeekVideo(Guid roomId, double currentTime)
     {
         if (!await CanControlVideo(roomId)) return;
 
-        UpdateSyncState(roomId, _roomSyncStates.TryGetValue(roomId, out var state) && state.IsPlaying, currentTime);
-        await Clients.Group($"video-{roomId}").SendAsync("VideoSeeked", new { CurrentTime = currentTime, Timestamp = DateTime.UtcNow });
-    }
-
-    public async Task ChangeVideo(Guid roomId, Guid videoId)
-    {
-        if (!await CanControlVideo(roomId)) return;
-
-        var playlist = await _context.Playlists.FirstOrDefaultAsync(p => p.RoomId == roomId);
-        if (playlist != null)
+        var room = await _context.Rooms.FindAsync(roomId);
+        if (room != null)
         {
-            playlist.CurrentVideoId = videoId;
-            playlist.CurrentTime = 0;
-            playlist.IsPlaying = false;
-            playlist.LastSyncAt = DateTime.UtcNow;
+            room.VideoCurrentTime = currentTime;
+            room.VideoLastSyncAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
 
-        _roomSyncStates[roomId] = new VideoSyncState
-        {
-            CurrentVideoId = videoId,
-            IsPlaying = false,
-            CurrentTime = 0,
-            LastSyncAt = DateTime.UtcNow
-        };
+        await Clients.Group($"video-{roomId}").SendAsync("VideoSeeked", new { CurrentTime = currentTime });
+    }
 
-        await Clients.Group($"video-{roomId}").SendAsync("VideoChanged", new { VideoId = videoId });
+    public async Task ChangeVideo(Guid roomId, string videoUrl, string videoType)
+    {
+        if (!await CanControlVideo(roomId)) return;
+
+        var room = await _context.Rooms.FindAsync(roomId);
+        if (room != null)
+        {
+            room.CurrentVideoUrl = videoUrl;
+            room.CurrentVideoType = videoType;
+            room.IsVideoPlaying = false;
+            room.VideoCurrentTime = 0;
+            room.VideoLastSyncAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
+        await Clients.Group($"video-{roomId}").SendAsync("VideoChanged", new { VideoUrl = videoUrl, VideoType = videoType });
     }
 
     public async Task RequestSync(Guid roomId)
@@ -92,20 +107,21 @@ public class VideoHub : Hub
         var userId = GetUserId();
         if (!userId.HasValue) return;
 
-        if (_roomSyncStates.TryGetValue(roomId, out var state))
+        var room = await _context.Rooms.FindAsync(roomId);
+        if (room != null && !string.IsNullOrEmpty(room.CurrentVideoUrl))
         {
-            // Calculate adjusted time if playing
-            var adjustedTime = state.CurrentTime;
-            if (state.IsPlaying && state.LastSyncAt.HasValue)
+            var adjustedTime = room.VideoCurrentTime;
+            if (room.IsVideoPlaying && room.VideoLastSyncAt.HasValue)
             {
-                var elapsed = (DateTime.UtcNow - state.LastSyncAt.Value).TotalSeconds;
+                var elapsed = (DateTime.UtcNow - room.VideoLastSyncAt.Value).TotalSeconds;
                 adjustedTime += elapsed;
             }
 
             await Clients.Caller.SendAsync("SyncState", new VideoSyncState
             {
-                CurrentVideoId = state.CurrentVideoId,
-                IsPlaying = state.IsPlaying,
+                VideoUrl = room.CurrentVideoUrl,
+                VideoType = room.CurrentVideoType,
+                IsPlaying = room.IsVideoPlaying,
                 CurrentTime = adjustedTime,
                 LastSyncAt = DateTime.UtcNow
             });
@@ -120,18 +136,20 @@ public class VideoHub : Hub
         var member = await _context.RoomMembers
             .FirstOrDefaultAsync(m => m.RoomId == roomId && m.UserId == userId.Value && m.IsActive);
 
-        return member != null && member.Role >= Core.Entities.RoomRole.Member;
+        // Owner and Moderators can control video
+        return member != null && member.Role >= RoomRole.Moderator;
     }
 
-    private void UpdateSyncState(Guid roomId, bool isPlaying, double currentTime)
+    private async Task UpdateRoomVideoState(Guid roomId, bool isPlaying, double currentTime)
     {
-        _roomSyncStates[roomId] = new VideoSyncState
+        var room = await _context.Rooms.FindAsync(roomId);
+        if (room != null)
         {
-            CurrentVideoId = _roomSyncStates.TryGetValue(roomId, out var existing) ? existing.CurrentVideoId : null,
-            IsPlaying = isPlaying,
-            CurrentTime = currentTime,
-            LastSyncAt = DateTime.UtcNow
-        };
+            room.IsVideoPlaying = isPlaying;
+            room.VideoCurrentTime = currentTime;
+            room.VideoLastSyncAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
     }
 
     private Guid? GetUserId()
@@ -145,7 +163,8 @@ public class VideoHub : Hub
 
 public class VideoSyncState
 {
-    public Guid? CurrentVideoId { get; set; }
+    public string? VideoUrl { get; set; }
+    public string? VideoType { get; set; }
     public bool IsPlaying { get; set; }
     public double CurrentTime { get; set; }
     public DateTime? LastSyncAt { get; set; }

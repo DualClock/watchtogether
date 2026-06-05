@@ -27,7 +27,9 @@ public class RoomService : IRoomService
             Type = roomType,
             PasswordHash = !string.IsNullOrEmpty(request.Password) ? BCrypt.Net.BCrypt.HashPassword(request.Password) : null,
             MaxUsers = request.MaxUsers,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            CurrentVideoUrl = request.VideoUrl,
+            CurrentVideoType = request.VideoType ?? "url"
         };
 
         await _unitOfWork.Rooms.AddAsync(room);
@@ -122,7 +124,11 @@ public class RoomService : IRoomService
             IsActive = room.IsActive,
             CreatedAt = room.CreatedAt,
             Members = memberDtos,
-            Playlist = playlistDto
+            Playlist = playlistDto,
+            CurrentVideoUrl = room.CurrentVideoUrl,
+            CurrentVideoType = room.CurrentVideoType,
+            IsVideoPlaying = room.IsVideoPlaying,
+            VideoCurrentTime = room.VideoCurrentTime
         };
     }
 
