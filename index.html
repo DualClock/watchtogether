@@ -641,6 +641,14 @@
     background: #000;
   }
 
+  #vkPlayer {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: none;
+    background: #000;
+  }
+
   .cinema-waiting {
     position: absolute;
     inset: 0;
@@ -1314,6 +1322,7 @@
           </div>
           <div id="ytPlayer"></div>
           <video id="html5Player" controls></video>
+          <iframe id="vkPlayer" allow="autoplay; encrypted-media; fullscreen;" allowfullscreen></iframe>
           <div class="cinema-buffering-overlay" id="bufferingOverlay">
             <div class="cinema-buffering-spinner"></div>
             <div>Собеседник загружает видео...</div>
@@ -1322,7 +1331,7 @@
       </div>
       <div class="cinema-controls">
         <div class="cinema-url-row">
-          <input type="text" id="videoUrl" placeholder="Ссылка на YouTube или прямое видео (.mp4, .m3u8)" />
+          <input type="text" id="videoUrl" placeholder="YouTube, VK Video, или прямая ссылка (.mp4, .m3u8)" />
           <button onclick="loadVideo()">Загрузить</button>
         </div>
         <div class="cinema-playback-row">
@@ -1431,8 +1440,26 @@ function extractYouTubeId(url) {
   return null;
 }
 
+function extractVKVideoId(url) {
+  // Поддержка vk.com/video-, vkvideo.ru/video-, ok.ru/video/
+  const patterns = [
+    /(?:vk\.com\/video|vkvideo\.ru\/video|ok\.ru\/video|vk\.com\/[^/]+\?z=video)([-\d_]+)/,
+    /(?:vk\.com\/video_ext\.php\?oid=([-\d]+)&id=([\d]+))/,
+    /video([-\d_]+)/
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) {
+      if (m[1] && m[2]) return `${m[1]}_${m[2]}`;
+      return m[1];
+    }
+  }
+  return null;
+}
+
 function detectVideoType(url) {
   if (extractYouTubeId(url)) return 'youtube';
+  if (extractVKVideoId(url)) return 'vk';
   if (/\.(mp4|webm|ogg|m3u8)(\?.*)?$/i.test(url)) return 'direct';
   return 'direct'; // fallback
 }
@@ -1457,6 +1484,7 @@ function showPlayer(type) {
   $('playerWaiting').style.display = 'none';
   $('ytPlayer').style.display = type === 'youtube' ? 'block' : 'none';
   $('html5Player').style.display = type === 'direct' ? 'block' : 'none';
+  $('vkPlayer').style.display = type === 'vk' ? 'block' : 'none';
 }
 
 function resetPlayer() {
@@ -1473,9 +1501,16 @@ function resetPlayer() {
   v.src = '';
   v.removeAttribute('src');
   v.load();
+  $('vkPlayer').src = '';
   $('ytPlayer').style.display = 'none';
   $('html5Player').style.display = 'none';
+  $('vkPlayer').style.display = 'none';
   $('playerWaiting').style.display = 'flex';
+  // Восстанавливаем управление
+  $('videoTimeline').style.opacity = '1';
+  $('videoTimeline').style.pointerEvents = 'auto';
+  $('btnPlayPause').style.opacity = '1';
+  $('btnPlayPause').style.pointerEvents = 'auto';
   currentVideoUrl = '';
   currentVideoType = '';
   videoDuration = 0;
@@ -1505,7 +1540,6 @@ function loadVideoByUrl(url, startTime) {
     if (ytApiReady) {
       initYouTubePlayer(videoId, startTime || 0);
     } else {
-      // Ждём загрузки API
       const check = setInterval(() => {
         if (ytApiReady) {
           clearInterval(check);
@@ -1514,6 +1548,8 @@ function loadVideoByUrl(url, startTime) {
       }, 200);
       setTimeout(() => clearInterval(check), 10000);
     }
+  } else if (type === 'vk') {
+    initVKPlayer(url);
   } else {
     initHtml5Player(url, startTime || 0);
   }
@@ -1553,6 +1589,36 @@ function initYouTubePlayer(videoId, startTime) {
       }
     }
   });
+}
+
+function initVKPlayer(url) {
+  const vkId = extractVKVideoId(url);
+  if (!vkId) {
+    alert('Не удалось распознать ссылку VK Video');
+    return;
+  }
+  // Формируем embed URL
+  let embedUrl;
+  if (url.includes('ok.ru')) {
+    embedUrl = `https://ok.ru/videoembed/${vkId}`;
+  } else {
+    // vk.com / vkvideo.ru
+    const parts = vkId.split('_');
+    if (parts.length >= 2) {
+      embedUrl = `https://vk.com/video_ext.php?oid=${parts[0]}&id=${parts[1]}&autoplay=1`;
+    } else {
+      embedUrl = `https://vk.com/video_ext.php?oid=${vkId}&autoplay=1`;
+    }
+  }
+  $('vkPlayer').src = embedUrl;
+  // VK Video в iframe не поддерживает синхронизацию из-за CORS
+  // Скрываем timeline и показываем предупреждение
+  $('videoTimeline').style.opacity = '0.3';
+  $('videoTimeline').style.pointerEvents = 'none';
+  $('btnPlayPause').style.opacity = '0.3';
+  $('btnPlayPause').style.pointerEvents = 'none';
+  updateTimeDisplay(0, 0);
+  $('timeDisplay').textContent = 'VK Video — управление в плеере';
 }
 
 function initHtml5Player(url, startTime) {
