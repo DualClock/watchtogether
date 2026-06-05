@@ -1,0 +1,10 @@
+namespace WatchTogether.Application.DTOs.Room;
+
+public class CreateRoomRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string Type { get; set; } = "public";
+    public string? Password { get; set; }
+    public int MaxUsers { get; set; } = 10;
+}

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Комнаты — WatchTogether</title>
+    <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+    <div class="page-wrapper">
+        <header class="navbar"></header>
+
+        <main class="container">
+            <div class="rooms-header">
+                <h1>Комнаты для просмотра</h1>
+                <p>Найдите комнату или создайте свою</p>
+            </div>
+
+            <div class="rooms-toolbar">
+                <input type="text" class="form-input search-input" id="searchInput" placeholder="Поиск комнат...">
+                <button class="btn btn-primary" onclick="openCreateModal()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Создать комнату
+                </button>
+            </div>
+
+            <div class="rooms-grid" id="roomsGrid">
+                <div class="empty-state">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 16px;">Загрузка комнат...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Room Modal -->
+    <div class="modal-overlay" id="createModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Создать комнату</h2>
+                <button class="modal-close" onclick="closeCreateModal()">&times;</button>
+            </div>
+            <form id="createRoomForm">
+                <div class="form-group">
+                    <label class="form-label">Название</label>
+                    <input type="text" class="form-input" id="roomName" placeholder="Например: Вечерний кино-клуб" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Описание</label>
+                    <input type="text" class="form-input" id="roomDescription" placeholder="О чём эта комната?">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Тип комнаты</label>
+                    <select class="form-input" id="roomType">
+                        <option value="public">Публичная (видна всем)</option>
+                        <option value="bylink">По ссылке (нужна ссылка)</option>
+                        <option value="private">Приватная (нужен пароль)</option>
+                    </select>
+                </div>
+                <div class="form-group hidden" id="passwordGroup">
+                    <label class="form-label">Пароль</label>
+                    <input type="password" class="form-input" id="roomPassword" placeholder="Минимум 4 символа">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Максимум участников</label>
+                    <input type="number" class="form-input" id="roomMaxUsers" value="10" min="2" max="50">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Создать</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Введите пароль</h2>
+                <button class="modal-close" onclick="closePasswordModal()">&times;</button>
+            </div>
+            <form id="passwordForm">
+                <div class="form-group">
+                    <label class="form-label">Пароль комнаты</label>
+                    <input type="password" class="form-input" id="joinPassword" placeholder="Пароль" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Войти</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        let currentRooms = [];
+        let joinRoomId = null;
+
+        function openCreateModal() {
+            document.getElementById('createModal').classList.add('active');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('active');
+            document.getElementById('createRoomForm').reset();
+        }
+
+        function openPasswordModal(roomId) {
+            joinRoomId = roomId;
+            document.getElementById('passwordModal').classList.add('active');
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.remove('active');
+            document.getElementById('passwordForm').reset();
+            joinRoomId = null;
+        }
+
+        document.getElementById('roomType').addEventListener('change', (e) => {
+            document.getElementById('passwordGroup').classList.toggle('hidden', e.target.value !== 'private');
+        });
+
+        async function loadRooms() {
+            try {
+                const rooms = await api.getRooms();
+                currentRooms = rooms;
+                renderRooms(rooms);
+            } catch (error) {
+                document.getElementById('roomsGrid').innerHTML = `
+                    <div class="empty-state">
+                        <p>Не удалось загрузить комнаты</p>
+                        <button class="btn btn-primary mt-2" onclick="loadRooms()">Повторить</button>
+                    </div>
+                `;
+            }
+        }
+
+        function renderRooms(rooms) {
+            const grid = document.getElementById('roomsGrid');
+
+            if (!rooms || rooms.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                            <path d="M9 3v18"></path>
+                        </svg>
+                        <p>Пока нет комнат</p>
+                        <button class="btn btn-primary mt-2" onclick="openCreateModal()">Создать первую</button>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = rooms.map(room => `
+                <div class="room-card" onclick="handleRoomClick('${room.id}', '${room.type}')">
+                    <div class="room-card-header">
+                        <span class="room-name">${escapeHtml(room.name)}</span>
+                        <span class="room-type ${room.type}">${getTypeLabel(room.type)}</span>
+                    </div>
+                    <p class="room-description">${escapeHtml(room.description) || 'Без описания'}</p>
+                    <div class="room-meta">
+                        <span class="room-users">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            ${room.currentUsers} / ${room.maxUsers}
+                        </span>
+                        <span>${formatDateTime(room.createdAt)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function handleRoomClick(roomId, type) {
+            if (type === 'private') {
+                openPasswordModal(roomId);
+                return;
+            }
+            await joinRoom(roomId);
+        }
+
+        async function joinRoom(roomId, password = null) {
+            try {
+                await api.joinRoom(roomId, password);
+                window.location.href = `room.html?id=${roomId}`;
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        function getTypeLabel(type) {
+            const labels = { public: 'Публичная', bylink: 'По ссылке', private: 'Приватная' };
+            return labels[type] || type;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Search
+        let searchTimeout;
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const query = e.target.value.trim();
+
+            if (!query) {
+                renderRooms(currentRooms);
+                return;
+            }
+
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const rooms = await api.searchRooms(query);
+                    renderRooms(rooms);
+                } catch (error) {
+                    console.error('Search error:', error);
+                }
+            }, 300);
+        });
+
+        // Create room form
+        document.getElementById('createRoomForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const type = document.getElementById('roomType').value;
+            const data = {
+                name: document.getElementById('roomName').value.trim(),
+                description: document.getElementById('roomDescription').value.trim(),
+                type: type,
+                maxUsers: parseInt(document.getElementById('roomMaxUsers').value)
+            };
+
+            if (type === 'private') {
+                data.password = document.getElementById('roomPassword').value;
+            }
+
+            try {
+                const room = await api.createRoom(data);
+                showToast('Комната создана!', 'success');
+                closeCreateModal();
+                window.location.href = `room.html?id=${room.id}`;
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        });
+
+        // Password form
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('joinPassword').value;
+            await joinRoom(joinRoomId, password);
+        });
+
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+
+        // Load rooms on page load
+        loadRooms();
+    </script>
+</body>
+</html>

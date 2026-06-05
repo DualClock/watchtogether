@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/WatchTogether.Api/">
+    <Project Path="src/WatchTogether.Api/WatchTogether.Api/WatchTogether.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/WatchTogether.Application/">
+    <Project Path="src/WatchTogether.Application/WatchTogether.Application/WatchTogether.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/WatchTogether.Core/">
+    <Project Path="src/WatchTogether.Core/WatchTogether.Core/WatchTogether.Core.csproj" />
+  </Folder>
+  <Folder Name="/src/WatchTogether.Infrastructure/">
+    <Project Path="src/WatchTogether.Infrastructure/WatchTogether.Infrastructure/WatchTogether.Infrastructure.csproj" />
+  </Folder>
+</Solution>

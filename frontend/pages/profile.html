@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль — WatchTogether</title>
+    <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+    <div class="page-wrapper">
+        <header class="navbar"></header>
+
+        <main class="container">
+            <div class="profile-header" id="profileHeader">
+                <div class="profile-avatar-large" id="profileAvatar">
+                    <div class="spinner"></div>
+                </div>
+                <div class="profile-info">
+                    <h1 id="displayName">Загрузка...</h1>
+                    <p class="username" id="username">@...</p>
+                    <p id="bio" style="color: var(--text-secondary); margin-top: 8px;"></p>
+                    <div class="profile-stats">
+                        <div class="stat">
+                            <div class="stat-value" id="status">—</div>
+                            <div class="stat-label">Статус</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="joinedDate">—</div>
+                            <div class="stat-label">Регистрация</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Редактировать профиль</h3>
+                    </div>
+                    <form id="profileForm">
+                        <div class="form-group">
+                            <label class="form-label">Отображаемое имя</label>
+                            <input type="text" class="form-input" id="editDisplayName" placeholder="Ваше имя">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">О себе</label>
+                            <textarea class="form-input" id="editBio" rows="3" placeholder="Расскажите о себе..." style="resize: vertical;"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                    </form>
+                </div>
+
+                <div>
+                    <div class="card mb-2">
+                        <div class="card-header">
+                            <h3 class="card-title">Аватар</h3>
+                        </div>
+                        <form id="avatarForm">
+                            <div class="form-group">
+                                <input type="file" class="form-input" id="avatarInput" accept="image/*">
+                                <small style="color: var(--text-muted);">Максимум 5MB (jpg, png, gif, webp)</small>
+                            </div>
+                            <button type="submit" class="btn btn-secondary btn-block">Загрузить аватар</button>
+                        </form>
+                    </div>
+
+                    <div class="card" style="border-color: var(--error);">
+                        <div class="card-header">
+                            <h3 class="card-title" style="color: var(--error);">Опасная зона</h3>
+                        </div>
+                        <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                            Удаление аккаунта необратимо. Все ваши данные будут удалены.
+                        </p>
+                        <button class="btn btn-danger btn-block" onclick="confirmDeleteAccount()">
+                            Удалить аккаунт
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        let currentProfile = null;
+
+        async function loadProfile() {
+            if (!requireAuth()) return;
+
+            try {
+                currentProfile = await api.getProfile();
+                renderProfile(currentProfile);
+            } catch (error) {
+                showToast('Не удалось загрузить профиль', 'error');
+            }
+        }
+
+        function renderProfile(profile) {
+            const initial = profile.displayName?.[0] || profile.username?.[0] || '?';
+
+            document.getElementById('profileAvatar').innerHTML = profile.avatarUrl
+                ? `<img src="${API_BASE_URL}${profile.avatarUrl}" alt="Avatar">`
+                : initial;
+
+            document.getElementById('displayName').textContent = profile.displayName || profile.username;
+            document.getElementById('username').textContent = `@${profile.username}`;
+            document.getElementById('bio').textContent = profile.bio || 'Нет описания';
+            document.getElementById('status').textContent = getStatusLabel(profile.status);
+            document.getElementById('joinedDate').textContent = formatDate(profile.createdAt);
+
+            // Fill edit form
+            document.getElementById('editDisplayName').value = profile.displayName || '';
+            document.getElementById('editBio').value = profile.bio || '';
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                online: 'Онлайн',
+                offline: 'Офлайн',
+                inroom: 'В комнате',
+                away: 'Не в сети'
+            };
+            return labels[status] || status;
+        }
+
+        // Edit profile
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                displayName: document.getElementById('editDisplayName').value.trim(),
+                bio: document.getElementById('editBio').value.trim()
+            };
+
+            try {
+                const updated = await api.updateProfile(data);
+                currentProfile = updated;
+                renderProfile(updated);
+                showToast('Профиль обновлён!', 'success');
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        });
+
+        // Upload avatar
+        document.getElementById('avatarForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const input = document.getElementById('avatarInput');
+            const file = input.files[0];
+
+            if (!file) {
+                showToast('Выберите файл', 'warning');
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('Файл слишком большой (макс. 5MB)', 'error');
+                return;
+            }
+
+            try {
+                const result = await api.uploadAvatar(file);
+                currentProfile.avatarUrl = result.avatarUrl;
+                renderProfile(currentProfile);
+                showToast('Аватар обновлён!', 'success');
+                input.value = '';
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        });
+
+        // Delete account
+        function confirmDeleteAccount() {
+            if (!confirm('Вы уверены? Это действие необратимо!')) return;
+            if (!confirm('Все ваши данные будут удалены. Продолжить?')) return;
+
+            api.deleteAccount()
+                .then(() => {
+                    api.clearTokens();
+                    showToast('Аккаунт удалён', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1000);
+                })
+                .catch(error => {
+                    showToast(error.message, 'error');
+                });
+        }
+
+        loadProfile();
+    </script>
+</body>
+</html>

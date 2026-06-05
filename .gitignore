@@ -3,3 +3,9 @@ node_modules/
 *.log
 movies/
 .claude/
+.vs/
+*.vsidx
+.vscode/
+bin/
+obj/
+*.user
