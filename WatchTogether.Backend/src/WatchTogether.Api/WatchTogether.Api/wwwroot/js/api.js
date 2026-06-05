@@ -56,7 +56,7 @@ class WatchTogetherAPI {
                     return this.handleResponse(retryResponse);
                 }
                 this.clearTokens();
-                window.location.href = '/frontend/pages/login.html';
+                window.location.href = '/pages/login.html';
                 return null;
             }
 
@@ -238,7 +238,7 @@ function showToast(message, type = 'success') {
 // ===== Auth Guard =====
 function requireAuth() {
     if (!api.isAuthenticated()) {
-        window.location.href = '/frontend/pages/login.html';
+        window.location.href = '/pages/login.html';
         return false;
     }
     return true;
@@ -246,7 +246,7 @@ function requireAuth() {
 
 function redirectIfAuth() {
     if (api.isAuthenticated()) {
-        window.location.href = '/frontend/pages/rooms.html';
+        window.location.href = '/pages/rooms.html';
         return true;
     }
     return false;
@@ -273,7 +273,7 @@ async function renderNavbar() {
 
     navbar.innerHTML = `
         <div class="container">
-            <a href="/frontend/pages/rooms.html" class="logo">
+            <a href="/pages/rooms.html" class="logo">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
                 </svg>
@@ -281,22 +281,22 @@ async function renderNavbar() {
             </a>
             <nav>
                 <ul class="nav-links">
-                    <li><a href="/frontend/pages/rooms.html" class="${location.pathname.includes('rooms') ? 'active' : ''}">Комнаты</a></li>
+                    <li><a href="/pages/rooms.html" class="${location.pathname.includes('rooms') ? 'active' : ''}">Комнаты</a></li>
                     ${isAuth ? `
-                        <li><a href="/frontend/pages/profile.html" class="${location.pathname.includes('profile') ? 'active' : ''}">Профиль</a></li>
+                        <li><a href="/pages/profile.html" class="${location.pathname.includes('profile') ? 'active' : ''}">Профиль</a></li>
                     ` : ''}
                 </ul>
             </nav>
             <div class="user-menu">
                 ${isAuth ? `
                     <span style="color: var(--text-secondary);">${displayName}</span>
-                    <div class="user-avatar" onclick="window.location.href='/frontend/pages/profile.html'">
+                    <div class="user-avatar" onclick="window.location.href='/pages/profile.html'">
                         ${user?.avatarUrl ? `<img src="${API_BASE_URL}${user.avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : userInitial}
                     </div>
                     <button class="btn btn-sm btn-secondary" onclick="handleLogout()">Выйти</button>
                 ` : `
-                    <a href="/frontend/pages/login.html" class="btn btn-sm btn-secondary">Войти</a>
-                    <a href="/frontend/pages/register.html" class="btn btn-sm btn-primary">Регистрация</a>
+                    <a href="/pages/login.html" class="btn btn-sm btn-secondary">Войти</a>
+                    <a href="/pages/register.html" class="btn btn-sm btn-primary">Регистрация</a>
                 `}
             </div>
         </div>
@@ -310,7 +310,7 @@ async function handleLogout() {
         console.error('Logout error:', e);
     }
     api.clearTokens();
-    window.location.href = '/frontend/pages/login.html';
+    window.location.href = '/pages/login.html';
 }
 
 // ===== Form Validation =====
