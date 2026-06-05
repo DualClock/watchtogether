@@ -12,23 +12,45 @@ using WatchTogether.Infrastructure.Repositories;
 using WatchTogether.Infrastructure.Services;
 using WatchTogether.Infrastructure.SignalR;
 
-// Helper to convert Railway DATABASE_URL to Npgsql connection string
+// Helper to build an Npgsql connection string from available configuration.
+// Resolution order:
+//   1. ConnectionStrings__DefaultConnection as a postgres:// URL  → convert to Npgsql format
+//   2. ConnectionStrings__DefaultConnection already in Npgsql key=value format → use as-is
+//   3. Individual PG* environment variables provided by Railway     → build Npgsql string
 static string? GetConnectionString(IConfiguration config)
 {
     var connectionString = config.GetConnectionString("DefaultConnection");
-    
-    // If it's a URL (Railway format: postgres://user:pass@host:port/db), convert it
+
+    // If it's a Railway postgres:// URL, convert it to Npgsql key=value format
     if (!string.IsNullOrEmpty(connectionString) && connectionString.StartsWith("postgres://"))
     {
         var uri = new Uri(connectionString);
         var userInfo = uri.UserInfo.Split(':');
         var username = userInfo[0];
         var password = userInfo.Length > 1 ? userInfo[1] : "";
-        
+
         return $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=True";
     }
-    
-    return connectionString;
+
+    // If a non-empty, non-URL value is present, assume it is already a valid Npgsql string
+    if (!string.IsNullOrWhiteSpace(connectionString))
+    {
+        return connectionString;
+    }
+
+    // Fall back to individual PG* environment variables that Railway exposes
+    var pgHost     = Environment.GetEnvironmentVariable("PGHOST");
+    var pgPort     = Environment.GetEnvironmentVariable("PGPORT") ?? "5432";
+    var pgUser     = Environment.GetEnvironmentVariable("PGUSER");
+    var pgPassword = Environment.GetEnvironmentVariable("PGPASSWORD");
+    var pgDatabase = Environment.GetEnvironmentVariable("PGDATABASE");
+
+    if (!string.IsNullOrEmpty(pgHost) && !string.IsNullOrEmpty(pgUser) && !string.IsNullOrEmpty(pgDatabase))
+    {
+        return $"Host={pgHost};Port={pgPort};Username={pgUser};Password={pgPassword};Database={pgDatabase};SSL Mode=Require;Trust Server Certificate=True";
+    }
+
+    return null;
 }
 
 var builder = WebApplication.CreateBuilder(args);
