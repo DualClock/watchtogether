@@ -49,11 +49,14 @@
                     <input type="text" class="form-input" id="roomName" placeholder="Например: Вечерний кино-клуб" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Описание</label>
-                    <input type="text" class="form-input" id="roomDescription" placeholder="О чём эта комната?">
+                    <label class="form-label">Тип комнаты</label>
+                    <select class="form-input" id="roomPurpose" onchange="togglePurpose()">
+                        <option value="cinema">🎬 Кинотеатр — смотреть фильмы</option>
+                        <option value="call">📹 Видеозвонок — созвон с друзьями</option>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Тип комнаты</label>
+                    <label class="form-label">Доступ</label>
                     <select class="form-input" id="roomType">
                         <option value="public">Публичная (видна всем)</option>
                         <option value="bylink">По ссылке (нужна ссылка)</option>
@@ -68,21 +71,23 @@
                     <label class="form-label">Максимум участников</label>
                     <input type="number" class="form-input" id="roomMaxUsers" value="10" min="2" max="50">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Источник видео</label>
-                    <select class="form-input" id="videoSourceType" onchange="toggleVideoSource()">
-                        <option value="url">Ссылка на видео (URL)</option>
-                        <option value="file">Загрузить файл</option>
-                    </select>
-                </div>
-                <div class="form-group" id="videoUrlGroup">
-                    <label class="form-label">Ссылка на видео</label>
-                    <input type="url" class="form-input" id="videoUrl" placeholder="https://... или YouTube ссылка">
-                    <small style="color: var(--text-secondary);">Поддерживаются: прямые ссылки, YouTube, Яндекс.Диск</small>
-                </div>
-                <div class="form-group hidden" id="videoFileGroup">
-                    <label class="form-label">Видео файл</label>
-                    <input type="file" class="form-input" id="videoFile" accept="video/*">
+                <div id="cinemaOptions">
+                    <div class="form-group">
+                        <label class="form-label">Источник видео</label>
+                        <select class="form-input" id="videoSourceType" onchange="toggleVideoSource()">
+                            <option value="url">Ссылка на видео (URL)</option>
+                            <option value="file">Загрузить файл</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="videoUrlGroup">
+                        <label class="form-label">Ссылка на видео</label>
+                        <input type="url" class="form-input" id="videoUrl" placeholder="https://... или YouTube ссылка">
+                        <small style="color: var(--text-secondary);">Поддерживаются: прямые ссылки, YouTube, Яндекс.Диск</small>
+                    </div>
+                    <div class="form-group hidden" id="videoFileGroup">
+                        <label class="form-label">Видео файл</label>
+                        <input type="file" class="form-input" id="videoFile" accept="video/*">
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">Создать</button>
             </form>
@@ -120,8 +125,11 @@
             document.getElementById('createRoomForm').reset();
         }
 
-        function openPasswordModal(roomId) {
+        let joinRoomPurpose = 'cinema';
+        
+        function openPasswordModal(roomId, purpose) {
             joinRoomId = roomId;
+            joinRoomPurpose = purpose || 'cinema';
             document.getElementById('passwordModal').classList.add('active');
         }
 
@@ -139,6 +147,11 @@
             const type = document.getElementById('videoSourceType').value;
             document.getElementById('videoUrlGroup').classList.toggle('hidden', type !== 'url');
             document.getElementById('videoFileGroup').classList.toggle('hidden', type !== 'file');
+        }
+
+        function togglePurpose() {
+            const purpose = document.getElementById('roomPurpose').value;
+            document.getElementById('cinemaOptions').classList.toggle('hidden', purpose !== 'cinema');
         }
 
         async function loadRooms() {
@@ -174,12 +187,17 @@
             }
 
             grid.innerHTML = rooms.map(room => `
-                <div class="room-card" onclick="handleRoomClick('${room.id}', '${room.type}')">
+                <div class="room-card" onclick="handleRoomClick('${room.id}', '${room.type}', '${room.purpose}')">
                     <div class="room-card-header">
                         <span class="room-name">${escapeHtml(room.name)}</span>
-                        <span class="room-type ${room.type}">${getTypeLabel(room.type)}</span>
+                        <div style="display:flex;gap:8px;">
+                            <span class="room-type ${room.type}">${getTypeLabel(room.type)}</span>
+                            <span style="font-size:0.75rem;padding:4px 10px;border-radius:100px;background:${room.purpose === 'call' ? 'rgba(100,140,200,0.1)' : 'rgba(124,154,106,0.1)'};color:${room.purpose === 'call' ? '#648cc8' : 'var(--accent)'};font-weight:600;">
+                                ${room.purpose === 'call' ? '📹 Звонок' : '🎬 Кино'}
+                            </span>
+                        </div>
                     </div>
-                    <p class="room-description">${escapeHtml(room.description) || 'Без описания'}</p>
+                    <p class="room-description">${room.purpose === 'call' ? 'Видеозвонок с друзьями' : 'Совместный просмотр фильмов'}</p>
                     <div class="room-meta">
                         <span class="room-users">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -196,18 +214,22 @@
             `).join('');
         }
 
-        async function handleRoomClick(roomId, type) {
+        async function handleRoomClick(roomId, type, purpose) {
             if (type === 'private') {
-                openPasswordModal(roomId);
+                openPasswordModal(roomId, purpose);
                 return;
             }
-            await joinRoom(roomId);
+            await joinRoom(roomId, null, purpose);
         }
 
-        async function joinRoom(roomId, password = null) {
+        async function joinRoom(roomId, password = null, purpose = 'cinema') {
             try {
                 await api.joinRoom(roomId, password);
-                window.location.href = `room.html?id=${roomId}`;
+                if (purpose === 'call') {
+                    window.location.href = `call-room.html?id=${roomId}`;
+                } else {
+                    window.location.href = `room.html?id=${roomId}`;
+                }
             } catch (error) {
                 showToast(error.message, 'error');
             }
@@ -251,11 +273,12 @@
             e.preventDefault();
 
             const type = document.getElementById('roomType').value;
+            const purpose = document.getElementById('roomPurpose').value;
             const videoSourceType = document.getElementById('videoSourceType').value;
             const data = {
                 name: document.getElementById('roomName').value.trim(),
-                description: document.getElementById('roomDescription').value.trim(),
                 type: type,
+                purpose: purpose,
                 maxUsers: parseInt(document.getElementById('roomMaxUsers').value),
                 videoType: videoSourceType
             };
@@ -301,7 +324,12 @@
                 const room = await api.createRoom(data);
                 showToast('Комната создана!', 'success');
                 closeCreateModal();
-                window.location.href = `room.html?id=${room.id}`;
+                // Redirect based on room purpose
+                if (purpose === 'call') {
+                    window.location.href = `call-room.html?id=${room.id}`;
+                } else {
+                    window.location.href = `room.html?id=${room.id}`;
+                }
             } catch (error) {
                 showToast(error.message, 'error');
             }
@@ -311,7 +339,7 @@
         document.getElementById('passwordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const password = document.getElementById('joinPassword').value;
-            await joinRoom(joinRoomId, password);
+            await joinRoom(joinRoomId, password, joinRoomPurpose);
         });
 
         // Close modals on overlay click

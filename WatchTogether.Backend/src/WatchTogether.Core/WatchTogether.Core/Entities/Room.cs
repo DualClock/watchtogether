@@ -12,6 +12,7 @@ public class Room
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ClosedAt { get; set; }
+    public RoomPurpose Purpose { get; set; } = RoomPurpose.Cinema;
     
     // Current video
     public string? CurrentVideoUrl { get; set; }
@@ -34,4 +35,10 @@ public enum RoomType
     Public,
     ByLink,
     Private
+}
+
+public enum RoomPurpose
+{
+    Cinema,  // Watch movies together
+    Call     // Video calls
 }

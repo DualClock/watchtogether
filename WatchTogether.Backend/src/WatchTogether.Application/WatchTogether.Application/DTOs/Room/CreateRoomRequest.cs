@@ -8,7 +8,10 @@ public class CreateRoomRequest
     public string? Password { get; set; }
     public int MaxUsers { get; set; } = 10;
     
-    // Video source
-    public string? VideoUrl { get; set; } // URL for external video (YouTube, Yandex, etc.)
-    public string? VideoType { get; set; } = "url"; // "url" or "file"
+    // Room purpose
+    public string Purpose { get; set; } = "cinema"; // "cinema" or "call"
+    
+    // Video source (for cinema rooms)
+    public string? VideoUrl { get; set; }
+    public string? VideoType { get; set; } = "url";
 }

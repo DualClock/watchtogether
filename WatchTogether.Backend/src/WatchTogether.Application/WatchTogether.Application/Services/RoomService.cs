@@ -17,6 +17,9 @@ public class RoomService : IRoomService
     {
         if (!Enum.TryParse<RoomType>(request.Type, true, out var roomType))
             roomType = RoomType.Public;
+        
+        if (!Enum.TryParse<RoomPurpose>(request.Purpose, true, out var roomPurpose))
+            roomPurpose = RoomPurpose.Cinema;
 
         var room = new Room
         {
@@ -25,6 +28,7 @@ public class RoomService : IRoomService
             Description = request.Description,
             CreatorId = userId,
             Type = roomType,
+            Purpose = roomPurpose,
             PasswordHash = !string.IsNullOrEmpty(request.Password) ? BCrypt.Net.BCrypt.HashPassword(request.Password) : null,
             MaxUsers = request.MaxUsers,
             CreatedAt = DateTime.UtcNow,
@@ -315,10 +319,11 @@ public class RoomService : IRoomService
             Name = room.Name,
             Description = room.Description,
             CreatorId = room.CreatorId,
-            CreatorUsername = "Unknown", // Will be populated when needed
+            CreatorUsername = "Unknown",
             Type = room.Type.ToString().ToLower(),
+            Purpose = room.Purpose.ToString().ToLower(),
             MaxUsers = room.MaxUsers,
-            CurrentUsers = 0, // Will be populated when needed
+            CurrentUsers = 0,
             IsActive = room.IsActive,
             CreatedAt = room.CreatedAt
         };

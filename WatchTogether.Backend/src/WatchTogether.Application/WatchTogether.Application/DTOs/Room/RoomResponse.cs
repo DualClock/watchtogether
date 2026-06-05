@@ -8,6 +8,7 @@ public class RoomResponse
     public Guid CreatorId { get; set; }
     public string CreatorUsername { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
+    public string Purpose { get; set; } = "cinema";
     public int MaxUsers { get; set; }
     public int CurrentUsers { get; set; }
     public bool IsActive { get; set; }
