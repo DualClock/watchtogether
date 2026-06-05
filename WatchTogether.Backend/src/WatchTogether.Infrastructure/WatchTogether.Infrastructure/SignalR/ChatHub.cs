@@ -64,11 +64,30 @@ public class ChatHub : Hub
         await UpdateUserStatus(userId.Value, UserStatus.InRoom);
 
         var user = await _context.Users.FindAsync(userId.Value);
+
+        // Send current room members to the caller for participant list
+        var members = await _context.RoomMembers
+            .AsNoTracking()
+            .Where(m => m.RoomId == roomId && m.IsActive)
+            .Include(m => m.User)
+            .Select(m => new
+            {
+                UserId = m.UserId,
+                Username = m.User!.UserName,
+                DisplayName = m.User.DisplayName,
+                AvatarUrl = m.User.AvatarUrl,
+                Role = m.Role.ToString()
+            })
+            .ToListAsync();
+
+        await Clients.Caller.SendAsync("RoomMembers", new { Members = members });
+
         await Clients.Group(roomId.ToString()).SendAsync("UserJoined", new
         {
             UserId = userId.Value,
             Username = user?.UserName,
             DisplayName = user?.DisplayName,
+            AvatarUrl = user?.AvatarUrl,
             JoinedAt = DateTime.UtcNow
         });
     }
@@ -90,6 +109,7 @@ public class ChatHub : Hub
         {
             UserId = userId.Value,
             Username = user?.UserName,
+            DisplayName = user?.DisplayName,
             LeftAt = DateTime.UtcNow
         });
     }
@@ -200,6 +220,51 @@ public class ChatHub : Hub
         {
             UserId = userId.Value,
             Username = user?.UserName
+        });
+    }
+
+    // ===== WebRTC Signaling =====
+
+    public async Task SendWebRtcOffer(Guid roomId, Guid targetUserId, string sdp)
+    {
+        var userId = GetUserId();
+        if (!userId.HasValue) return;
+
+        var caller = await _context.Users.FindAsync(userId.Value);
+        await Clients.User(targetUserId.ToString()).SendAsync("ReceiveOffer", new
+        {
+            RoomId = roomId,
+            FromUserId = userId.Value,
+            FromUsername = caller?.UserName,
+            Sdp = sdp
+        });
+    }
+
+    public async Task SendWebRtcAnswer(Guid roomId, Guid targetUserId, string sdp)
+    {
+        var userId = GetUserId();
+        if (!userId.HasValue) return;
+
+        await Clients.User(targetUserId.ToString()).SendAsync("ReceiveAnswer", new
+        {
+            RoomId = roomId,
+            FromUserId = userId.Value,
+            Sdp = sdp
+        });
+    }
+
+    public async Task SendIceCandidate(Guid roomId, Guid targetUserId, string candidate, string? sdpMid, int? sdpMLineIndex)
+    {
+        var userId = GetUserId();
+        if (!userId.HasValue) return;
+
+        await Clients.User(targetUserId.ToString()).SendAsync("ReceiveIceCandidate", new
+        {
+            RoomId = roomId,
+            FromUserId = userId.Value,
+            Candidate = candidate,
+            SdpMid = sdpMid,
+            SdpMLineIndex = sdpMLineIndex
         });
     }
 
