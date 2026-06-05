@@ -197,10 +197,14 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<WatchTogether.Api.Middleware.ExceptionHandlingMiddleware>();
 
+app.UseDefaultFiles();
 app.UseStaticFiles();
 app.MapControllers();
 app.MapHub<ChatHub>("/hubs/chat");
 app.MapHub<VideoHub>("/hubs/video");
+
+// Fallback to index.html for SPA routes
+app.MapFallbackToFile("index.html");
 
 // Apply migrations
 using (var scope = app.Services.CreateScope())

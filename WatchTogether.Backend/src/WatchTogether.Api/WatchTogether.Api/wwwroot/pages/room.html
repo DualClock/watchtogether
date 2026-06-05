@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Комната — WatchTogether</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+</head>
+<body>
+    <div class="page-wrapper">
+        <header class="navbar"></header>
+
+        <main class="container">
+            <div class="room-layout">
+                <!-- Video Section -->
+                <div class="video-section">
+                    <div class="video-container" id="videoContainer">
+                        <div class="video-placeholder" id="videoPlaceholder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="2" y="2" width="20" height="20" rx="2.18"></rect>
+                                <line x1="7" y1="2" x2="7" y2="22"></line>
+                                <line x1="17" y1="2" x2="17" y2="22"></line>
+                                <line x1="2" y1="12" x2="22" y2="12"></line>
+                                <line x1="2" y1="7" x2="7" y2="7"></line>
+                                <line x1="2" y1="17" x2="7" y2="17"></line>
+                                <line x1="17" y1="17" x2="22" y2="17"></line>
+                                <line x1="17" y1="7" x2="22" y2="7"></line>
+                            </svg>
+                            <p>Видео не выбрано</p>
+                            <button class="btn btn-primary mt-2" onclick="document.getElementById('videoInput').click()">
+                                Загрузить видео
+                            </button>
+                            <input type="file" id="videoInput" accept="video/*" class="hidden" onchange="handleVideoUpload(this)">
+                        </div>
+                        <video id="videoPlayer" class="hidden" controls></video>
+                    </div>
+
+                    <div class="video-controls" id="videoControls">
+                        <button onclick="togglePlay()" id="playBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                        </button>
+                        <div class="progress-bar" id="progressBar" onclick="seek(event)">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+                        <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
+                    </div>
+                </div>
+
+                <!-- Chat Section -->
+                <div class="chat-section">
+                    <div class="chat-header">
+                        <h3 id="roomName">Загрузка...</h3>
+                        <span class="chat-members-count" id="membersCount">0 участников</span>
+                    </div>
+
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="empty-state">
+                            <p>Нет сообщений</p>
+                            <p style="font-size: 0.85rem;">Будьте первым!</p>
+                        </div>
+                    </div>
+
+                    <div class="chat-input-area">
+                        <input type="text" class="chat-input" id="messageInput" placeholder="Написать сообщение..." maxlength="2000">
+                        <button class="chat-send-btn" onclick="sendMessage()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/signalr.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('id');
+
+        if (!roomId) {
+            window.location.href = 'rooms.html';
+        }
+
+        let room = null;
+        let messages = [];
+        let isPlaying = false;
+        let isSyncing = false;
+        let typingTimeout;
+
+        const videoPlayer = document.getElementById('videoPlayer');
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        const playBtn = document.getElementById('playBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const timeDisplay = document.getElementById('timeDisplay');
+
+        async function init() {
+            if (!requireAuth()) return;
+
+            try {
+                room = await api.getRoom(roomId);
+                document.getElementById('roomName').textContent = room.name;
+                document.getElementById('membersCount').textContent = `${room.members?.length || 0} участников`;
+
+                // Load messages
+                await loadMessages();
+
+                // Connect SignalR
+                await chatConnection.connect();
+                await chatConnection.joinRoom(roomId);
+
+                await videoConnection.connect();
+                await videoConnection.joinRoom(roomId);
+
+                setupChatHandlers();
+                setupVideoHandlers();
+
+            } catch (error) {
+                showToast(error.message, 'error');
+                setTimeout(() => window.location.href = 'rooms.html', 2000);
+            }
+        }
+
+        async function loadMessages() {
+            try {
+                messages = await api.getMessages(roomId);
+                renderMessages();
+            } catch (error) {
+                console.error('Failed to load messages:', error);
+            }
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('chatMessages');
+
+            if (!messages || messages.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>Нет сообщений</p>
+                        <p style="font-size: 0.85rem;">Будьте первым!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = messages.map(msg => `
+                <div class="message" data-id="${msg.id}">
+                    <div class="message-avatar" style="background: ${stringToColor(msg.username)}">
+                        ${msg.username?.[0]?.toUpperCase() || '?'}
+                    </div>
+                    <div class="message-content">
+                        <div class="message-header">
+                            <span class="message-author">${escapeHtml(msg.username)}</span>
+                            <span class="message-time">${formatTime(msg.createdAt)}</span>
+                        </div>
+                        <div class="message-text">${escapeHtml(msg.content)}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            scrollToBottom();
+        }
+
+        function appendMessage(msg) {
+            const container = document.getElementById('chatMessages');
+
+            // Remove empty state if present
+            if (container.querySelector('.empty-state')) {
+                container.innerHTML = '';
+            }
+
+            const messageEl = document.createElement('div');
+            messageEl.className = 'message';
+            messageEl.innerHTML = `
+                <div class="message-avatar" style="background: ${stringToColor(msg.username)}">
+                    ${msg.username?.[0]?.toUpperCase() || '?'}
+                </div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">${escapeHtml(msg.username)}</span>
+                        <span class="message-time">${formatTime(msg.createdAt)}</span>
+                    </div>
+                    <div class="message-text">${escapeHtml(msg.content)}</div>
+                </div>
+            `;
+            container.appendChild(messageEl);
+            scrollToBottom();
+        }
+
+        function appendSystemMessage(text) {
+            const container = document.getElementById('chatMessages');
+            if (container.querySelector('.empty-state')) {
+                container.innerHTML = '';
+            }
+
+            const el = document.createElement('div');
+            el.className = 'message-system';
+            el.textContent = text;
+            container.appendChild(el);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('chatMessages');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function setupChatHandlers() {
+            chatConnection.onMessage((msg) => {
+                appendMessage(msg);
+            });
+
+            chatConnection.onUserJoined((data) => {
+                appendSystemMessage(`${data.username} присоединился`);
+            });
+
+            chatConnection.onUserLeft((data) => {
+                appendSystemMessage(`${data.username} вышел`);
+            });
+        }
+
+        function setupVideoHandlers() {
+            videoConnection.onPlay((data) => {
+                isSyncing = true;
+                videoPlayer.currentTime = data.currentTime;
+                videoPlayer.play();
+                isSyncing = false;
+            });
+
+            videoConnection.onPause((data) => {
+                isSyncing = true;
+                videoPlayer.currentTime = data.currentTime;
+                videoPlayer.pause();
+                isSyncing = false;
+            });
+
+            videoConnection.onSeek((data) => {
+                isSyncing = true;
+                videoPlayer.currentTime = data.currentTime;
+                isSyncing = false;
+            });
+
+            videoConnection.onSync((state) => {
+                isSyncing = true;
+                if (state.currentVideoId) {
+                    // Load video by ID
+                }
+                videoPlayer.currentTime = state.currentTime;
+                if (state.isPlaying) {
+                    videoPlayer.play();
+                } else {
+                    videoPlayer.pause();
+                }
+                isSyncing = false;
+            });
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+
+            if (!content) return;
+
+            input.value = '';
+
+            try {
+                await chatConnection.sendMessage(content);
+            } catch (error) {
+                showToast('Не удалось отправить сообщение', 'error');
+            }
+        }
+
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+
+            // Typing indicator
+            clearTimeout(typingTimeout);
+            chatConnection.typing();
+            typingTimeout = setTimeout(() => {}, 3000);
+        });
+
+        // Video controls
+        function handleVideoUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const url = URL.createObjectURL(file);
+            videoPlayer.src = url;
+            videoPlaceholder.classList.add('hidden');
+            videoPlayer.classList.remove('hidden');
+
+            videoPlayer.onloadedmetadata = () => {
+                updateTimeDisplay();
+            };
+        }
+
+        async function togglePlay() {
+            if (videoPlayer.paused) {
+                await videoConnection.play(videoPlayer.currentTime);
+                videoPlayer.play();
+            } else {
+                await videoConnection.pause(videoPlayer.currentTime);
+                videoPlayer.pause();
+            }
+        }
+
+        async function seek(event) {
+            const rect = progressBar.getBoundingClientRect();
+            const percent = (event.clientX - rect.left) / rect.width;
+            const time = percent * videoPlayer.duration;
+
+            await videoConnection.seek(time);
+            videoPlayer.currentTime = time;
+        }
+
+        function updateTimeDisplay() {
+            const current = formatDuration(videoPlayer.currentTime);
+            const total = formatDuration(videoPlayer.duration || 0);
+            timeDisplay.textContent = `${current} / ${total}`;
+
+            if (videoPlayer.duration) {
+                const percent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+                progressFill.style.width = `${percent}%`;
+            }
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds || isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        videoPlayer.addEventListener('timeupdate', updateTimeDisplay);
+
+        videoPlayer.addEventListener('play', () => {
+            isPlaying = true;
+            playBtn.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="4" width="4" height="16"></rect>
+                    <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
+            `;
+        });
+
+        videoPlayer.addEventListener('pause', () => {
+            isPlaying = false;
+            playBtn.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+            `;
+        });
+
+        function stringToColor(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const hue = Math.abs(hash % 360);
+            return `hsl(${hue}, 70%, 45%)`;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Leave room on page unload
+        window.addEventListener('beforeunload', () => {
+            chatConnection.leaveRoom(roomId);
+            videoConnection.leaveRoom(roomId);
+        });
+
+        init();
+    </script>
+</body>
+</html>

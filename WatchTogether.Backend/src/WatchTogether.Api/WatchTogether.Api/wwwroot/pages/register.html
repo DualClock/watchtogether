@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация — WatchTogether</title>
+    <link rel="stylesheet" href="../css/main.css">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>Создать аккаунт</h1>
+                <p>Начните смотреть фильмы вместе с друзьями</p>
+            </div>
+
+            <form id="registerForm">
+                <div class="form-group">
+                    <label class="form-label">Имя пользователя</label>
+                    <input type="text" class="form-input" id="username" placeholder="john_doe" required>
+                    <div class="form-error hidden" id="usernameError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="email" placeholder="you@example.com" required>
+                    <div class="form-error hidden" id="emailError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Пароль</label>
+                    <input type="password" class="form-input" id="password" placeholder="Минимум 8 символов" required>
+                    <div class="form-error hidden" id="passwordError"></div>
+                    <small style="color: var(--text-muted); font-size: 0.8rem;">
+                        Минимум 8 символов, заглавная, строчная, цифра и спецсимвол
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Подтвердите пароль</label>
+                    <input type="password" class="form-input" id="confirmPassword" placeholder="Повторите пароль" required>
+                    <div class="form-error hidden" id="confirmPasswordError"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn">
+                    <span class="btn-text">Зарегистрироваться</span>
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                Уже есть аккаунт? <a href="login.html">Войти</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/api.js"></script>
+    <script>
+        if (redirectIfAuth()) {
+            // Already authenticated, redirecting...
+        }
+
+        const form = document.getElementById('registerForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        function showFieldError(fieldId, message) {
+            const errorEl = document.getElementById(fieldId + 'Error');
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+        }
+
+        function hideFieldError(fieldId) {
+            document.getElementById(fieldId + 'Error').classList.add('hidden');
+        }
+
+        function validateForm() {
+            let valid = true;
+
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            hideFieldError('username');
+            hideFieldError('email');
+            hideFieldError('password');
+            hideFieldError('confirmPassword');
+
+            if (!validateUsername(username)) {
+                showFieldError('username', 'Имя пользователя: 3-30 символов, только буквы, цифры и _');
+                valid = false;
+            }
+
+            if (!validateEmail(email)) {
+                showFieldError('email', 'Введите корректный email');
+                valid = false;
+            }
+
+            if (!validatePassword(password)) {
+                showFieldError('password', 'Пароль слишком простой');
+                valid = false;
+            }
+
+            if (password !== confirmPassword) {
+                showFieldError('confirmPassword', 'Пароли не совпадают');
+                valid = false;
+            }
+
+            return valid;
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!validateForm()) return;
+
+            submitBtn.disabled = true;
+            submitBtn.querySelector('.btn-text').textContent = 'Регистрация...';
+
+            try {
+                await api.register({
+                    username: document.getElementById('username').value.trim(),
+                    email: document.getElementById('email').value.trim(),
+                    password: document.getElementById('password').value,
+                    confirmPassword: document.getElementById('confirmPassword').value
+                });
+
+                showToast('Регистрация успешна!', 'success');
+                setTimeout(() => {
+                    window.location.href = 'rooms.html';
+                }, 500);
+            } catch (error) {
+                showToast(error.message, 'error');
+                submitBtn.disabled = false;
+                submitBtn.querySelector('.btn-text').textContent = 'Зарегистрироваться';
+            }
+        });
+    </script>
+</body>
+</html>
